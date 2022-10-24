@@ -127,4 +127,5 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
     }
 }
+
 export default plugin;
