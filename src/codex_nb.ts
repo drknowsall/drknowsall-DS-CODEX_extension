@@ -406,7 +406,6 @@ export class codex_model {
         cell.value.text = JSON.stringify(params,null, "\t");
 
         model.cells.push(cell);
-        statusWidget.node.textContent = 'Codex: set conf successfully!';
   }
 
   async predict(
