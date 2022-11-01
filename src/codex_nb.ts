@@ -91,9 +91,7 @@ export class codex_model {
       presence_penalty: 1,
       best_of: 1,
       stop: ['# In[']
-    },
-    api_key = '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' //Remove before push!
-  ) {
+    }) {
 
     this.params = {
       add_comments:true,
@@ -109,15 +107,6 @@ export class codex_model {
     };
     this.cache_cmp = {};
     this.cache_exp = {};
-
-    //Remove before push!
-    this.api_key = api_key;
-
-    const configuration = new Configuration({
-      apiKey: this.api_key
-    });
-    this.openai = new OpenAIApi(configuration);
-    //
   }
 
   async add_comments(
