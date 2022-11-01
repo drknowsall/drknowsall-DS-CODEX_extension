@@ -644,6 +644,5 @@ const plugin: JupyterFrontEndPlugin<void> = {
         app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension4(app));
         app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension5(app));
     }
-
 }
 export default plugin;
