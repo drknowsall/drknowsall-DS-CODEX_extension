@@ -3,7 +3,7 @@
 
 ## Supporting the following operations:
 
-## 1. Run codex - Run completion for the next cell - The completion metric is configurable please see "Setting extension configurations".
+## 1. Run codex - Run completion for the next cell.
 ## 2. Run codex in cell - Run completion for the current cell.
 ## 3. Remove comments - remove all comments from the cells.
 
