@@ -1,8 +1,10 @@
 # CodexNB
-## A Jupyter extention for auto-completetion using OpenAI's codex model (API key is needed)
+## A Jupyter extention for auto-completetion using a wraper model for OpenAI's codex specificly designed for notebooks usage and datascience pipeline. (API key is needed)
 
-
-<img>
+## Spporting the following operationd:
+## 1. Run codex - Run completion for the next cell - The completion metric is configurable please see "Setting extension configurations".
+## 2. Run codex in cell - Run completion for the current cell.
+## 3. Remove comments - remove all comments from the cells.
 
 Installation:
 
@@ -25,6 +27,34 @@ To remove the extension, execute:
 ```bash
 pip uninstall codex_nb_autocomplete
 ```
+
+## Setting extension configurations: 
+
+Press "set codex configurations"
+Insert the api key at the buttom.
+Press "read codex configurations"
+
+You are ready to go!
+
+The extension parameters:
+
+{
+	"add_comments": true, # Whether to automaticlly add comments to your code.
+	"add_codex_annotation": false, # Adds a small cell indicating that the cell below is the output of codex.
+	"extract_selective": false, # Whether to feed codex the cells in the default way - window or only pick the most relevant cells. 
+	"append_markdown": true, # Whether to also return markdown cells.
+	"append_notebook_cell_borders": true, # Improves the input structure for notebook usage.
+	"append_dataset_meta": true, # Appends the name of the table, columns in every csv file that is being read by pandas.
+	"window_size": 3, # The window size to use if extract_selective is false.
+	"model_name": "codex",
+	"model": {
+		"model": "code-davinci-002", 
+		"temperature": 0, # Increase this value for more "surprising results"
+		"max_tokens": 256, # Max tokens to be sent to the API
+	},
+	"api_key": ""
+}
+
 
 ## Contributing
 
