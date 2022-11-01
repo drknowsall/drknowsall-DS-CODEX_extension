@@ -1,7 +1,10 @@
-# codex_nb_autocomplete
+# CodexNB
+## A Jupyter extention for auto-completetion using OpenAI's codex model (API key is needed)
 
-[![Github Actions Status](https://github.com/drknowsall/NotebookAutocomplete/workflows/Build/badge.svg)](https://github.com/drknowsall/NotebookAutocomplete/actions/workflows/build.yml)
-autocomplete with codex
+
+<img>
+
+Installation:
 
 ## Requirements
 
