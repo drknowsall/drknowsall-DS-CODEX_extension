@@ -1,12 +1,11 @@
 # CodexNB
-## A Jupyter extention for auto-completetion using a wraper model for OpenAI's codex specificly designed for notebooks usage and datascience pipeline. (API key is needed)
+## A Jupyter extention for auto-completetion and automatic code decorations, internally using OpenAI's codex model with improved input selection that is specifically designed for notebooks usage and datascience pipeline. (API key is needed)
 
-## Spporting the following operationd:
+## Supporting the following operations:
+
 ## 1. Run codex - Run completion for the next cell - The completion metric is configurable please see "Setting extension configurations".
 ## 2. Run codex in cell - Run completion for the current cell.
 ## 3. Remove comments - remove all comments from the cells.
-
-Installation:
 
 ## Requirements
 
