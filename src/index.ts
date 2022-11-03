@@ -255,6 +255,22 @@ export class ButtonExtension5
 //   }
 // };
 
+function cells_trim(notebooks: INotebookTracker)
+{
+    let cells = notebooks!.currentWidget!.content!.model!.cells;
+    let i = cells.length - 1;
+    while (cells.length > 0)
+    {
+        if (cells.get(i).value.text == '')
+        {
+            cells.remove(i);
+            i --;
+        }
+    }
+
+}
+
+
 
 const plugin: JupyterFrontEndPlugin<void> = {
     id: 'codexnb:plugin',
@@ -394,7 +410,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
         // });
         //
 
-
         let toggled = false;
         let codex = new codex_model();
         app.commands.addCommand(CommandIDs.remove_comments, {
@@ -418,6 +433,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
                     return;
                 }
                 let len = notebooks.currentWidget.content.model.cells.length;
+
+                cells_trim(notebooks);
                 if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
                     console.log('cells are empty!');
                     toggled = false;
@@ -458,6 +475,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                     return;
                 }
                 let len = notebooks.currentWidget.content.model.cells.length;
+                cells_trim(notebooks);
                 if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
                     console.log('cells are empty!');
                     toggled = false;
@@ -530,6 +548,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                     return;
                 }
                 let len = notebooks.currentWidget.content.model.cells.length;
+                cells_trim(notebooks);
                 if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
                     console.log('cells are empty!');
                     toggled = false;
@@ -594,6 +613,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                     return;
                 }
                 let len = notebooks.currentWidget.content.model.cells.length;
+                cells_trim(notebooks);
                 if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
                     console.log('cells are empty!');
                     toggled = false;
@@ -636,7 +656,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 // })
             },
         });
-
 
         app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension(app));
         app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension2(app));

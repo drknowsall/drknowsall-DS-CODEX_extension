@@ -9,6 +9,7 @@ const { Configuration, OpenAIApi } = require('openai');
 import { IDocumentManager } from '@jupyterlab/docmanager';
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { Widget} from '@lumino/widgets';
+
 //
 
 function union(setA:Set<string>, setB:Set<string>) {
@@ -27,6 +28,10 @@ function intersection(setA:Set<string>, setB:Set<string>) {
     }
   }
   return _intersection;
+}
+
+function replaceAll(str:string, find:string, replace:string) {
+  return str.replace(new RegExp(find, 'g'), replace);
 }
 
 function jaccard_similarity(text_a: string, text_b: string)
@@ -96,7 +101,7 @@ export class codex_model {
     this.params = {
       add_comments:true,
       add_codex_annotation:true,
-      extract_selective:true,
+      extract_selective:false,
       append_markdown: false,
       append_notebook_cell_borders: true,
       append_dataset_meta: true,
@@ -134,11 +139,9 @@ export class codex_model {
         }
 
         let exp = await this.codex_explain_call(cell_source);
-        exp = exp
-          .replace('//', '#')
-          .replace('It', '')
-          .replace(/\s\s+/g, ' ')
-          .trim();
+        exp = replaceAll(exp, '//', '#')
+        exp = replaceAll(exp, 'It', '')
+        exp = replaceAll(exp, 'It', '').replace(/\s\s+/g, ' ').trim();
         // exp = exp.charAt(0).toUpperCase() + exp.slice(1);
         if (exp.length > 2) {
           cells.get(l).value.text = exp + '\n' + cells.get(l).value.text;
