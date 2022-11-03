@@ -259,15 +259,12 @@ function cells_trim(notebooks: INotebookTracker)
 {
     let cells = notebooks!.currentWidget!.content!.model!.cells;
     let i = cells.length - 1;
-    while (cells.length > 0)
-    {
-        if (cells.get(i).value.text == '')
-        {
-            cells.remove(i);
-            i --;
-        }
-    }
 
+    while (cells.length > 0 && cells.get(i).value.text == '')
+    {
+        cells.remove(i);
+        i --;
+    }
 }
 
 

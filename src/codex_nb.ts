@@ -140,8 +140,8 @@ export class codex_model {
 
         let exp = await this.codex_explain_call(cell_source);
         exp = replaceAll(exp, '//', '#')
-        exp = replaceAll(exp, 'It', '')
         exp = replaceAll(exp, 'It', '').replace(/\s\s+/g, ' ').trim();
+
         // exp = exp.charAt(0).toUpperCase() + exp.slice(1);
         if (exp.length > 2) {
           cells.get(l).value.text = exp + '\n' + cells.get(l).value.text;
@@ -184,24 +184,36 @@ export class codex_model {
 
         let fname = cell_source.substring(fname_i1, fname_i2);
         let file = await doc_manager.services.contents.get(fname);
-        let table_name = fname.replace('.csv', '').split('/').pop();
-        let columns = file.content
-          .split('\n')[0]
-          .split(',')
-          .filter((value: string) => {
-            return value != '';
-          });
-        let dataset_meta =
-          'Table ' + table_name + ', columns = [' + columns.join(' ,') + ']';
 
-        let cell = this.get_markdown(notebooks, dataset_meta, 'black');
+        if (file)
+        {
+          let table_name = fname.replace('.csv', '').split('/').pop();
+          let columns = file.content
+            .split('\n')[0]
+            .split(',')
+            .filter((value: string) => {
+              return value != '';
+            });
+          let dataset_meta =
+            'Table ' + table_name + ', columns = [' + columns.join(' ,') + ']';
 
-        cells.insert(l, cell);
+          let cell = this.get_markdown(notebooks, dataset_meta, 'black');
 
-        cell = this.get_markdown(notebooks, 'Data Exploration', 'black');
+          cells.insert(l, cell);
 
-        cells.insert(l + 2, cell);
-        l += 2;
+          cell = this.get_markdown(notebooks, 'Data Exploration', 'black');
+
+          cells.insert(l + 2, cell);
+          l += 2;
+        }
+        else
+        {
+          let cell = this.get_markdown(notebooks, 'Data Exploration', 'black');
+
+          cells.insert(l, cell);
+          l += 1;
+        }
+
       } else if (
         append_import &&
         (cell_source.match(/import/g) || []).length >= 2
@@ -388,7 +400,7 @@ export class codex_model {
         const model = notebooks.currentWidget!.content.model!;
         let md_cell = model.contentFactory.createMarkdownCell({});
 
-        md_cell.value.text = "<font color=\'" + color  + "\'" + " size=\'" + size.toString()  + "px" + "\'" + ">" + text.replace('#', '') + '</font>';
+        md_cell.value.text = "<font color=\'" + color  + "\'" + " size=\'" + size.toString()  + "px" + "\'" + ">" + replaceAll(text, '#', '') + '</font>';
         return md_cell;
   }
 
