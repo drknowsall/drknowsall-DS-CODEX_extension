@@ -127,7 +127,6 @@ function jaccard_similarity(text_a: string, text_b: string)
   const union_cardinality = union(sentences_a, sentences_b).size;
 
   return intersection_cardinality / union_cardinality;
-
 }
 
 
@@ -553,18 +552,24 @@ export class codex_model {
 
     this.messages.set_message('Codex input: ' + '\n' + codex_input);
 
-
     let cell;
-    statusWidget.node.textContent = 'Codex: predicted, #input tokens= ' + codex_input.length;
+    statusWidget.node.textContent = 'Codex: Calling API (num tokens= ' + codex_input.length + ")";
     this.messages.set_message('Calling API');
     let codex_output = await this.codex_completion_call(codex_input);
+
+    if (codex_output.indexOf('In[') >= 0)
+    {
+      codex_output = codex_output.slice(0, codex_output.indexOf('In['))
+    }
     const model = notebooks.currentWidget!.content.model!;
 
-    this.messages.set_message('output: \n' + codex_output);
-    // let doc_file = doc_manager.openOrReveal('codexnb');
-    // doc_file!.node.textContent += 'heeeeelllllooooo';
-    // doc_file = doc_manager.openOrReveal('Untitled.ipynb');
-    // let out = console_tracker.currentWidget?.contentFactory.createOutputPrompt();
+    let poutput = codex_output;
+    if (poutput.length > 20)
+    {
+      poutput = poutput.slice(0, 20) + '...';
+    }
+    this.messages.set_message('Codex output (length= ' + codex_output.length.toString() + '): \n' + poutput);
+
     let last_cell = model.cells.get(model.cells.length - 1).value.text.trim();
     if (model.cells.get(model.cells.length - 1).type =='markdown' && last_cell.indexOf('<') >=0)
       {
@@ -577,22 +582,27 @@ export class codex_model {
 
     if (last_cell == codex_output.trim())
      {
-       statusWidget.node.textContent = 'output is similar to previous cell - ignore';
-       this.messages.set_message('output is similar to previous cell - ignore');
+       statusWidget.node.textContent = 'output is identical to previous cell - ignore';
+       this.messages.set_message('output is identical to previous cell - ignore');
        return;
     }
 
+    let index = /[a-z]/i.exec(codex_output)!.index;
+
+    if (index > 0 && codex_output.trim()[0] != '#'){
+      in_cell = true;
+    }
     if (in_cell)
     {
+      if (codex_output[codex_output.length-1] == '\n')
+      {
+        codex_output = codex_output.slice(0, codex_output.length-1);
+      }
+
       model.cells.get(model.cells.length - 1).value.text += codex_output;
     }
     else
     {
-        // if (this.params['add_codex_annotation']) {
-        //   cell = this.get_markdown(notebooks, '[Created by codex]', 'grey', 1);
-        //   cell.
-        //   model.cells.push(cell);
-        // }
         codex_output = codex_output.trim();
         if (this.params['add_comments'] &&
           codex_output.indexOf('#') == 0 &&
@@ -634,18 +644,11 @@ export class codex_model {
 
     this.messages.set_message('Total tokens sent: ' + this.tokens_sent.toString());
 
-    statusWidget.node.textContent = 'Codex: predicted successfully,(input tokens= ' + codex_input.length + ")";
+    statusWidget.node.textContent = 'Codex: predicted successfully,(num tokens= ' + codex_output.length + ")";
   }
 
   async codex_completion_call(text: string): Promise<string> {
     const h = hashCode(text);
-    //let cached = await this.cache.match(text);
-
-    // if (cached)
-    // {
-    //   return cached.text();
-    // }
-
     if (h in this.cache_cmp) {
       this.messages.set_message('Cache used as prediction');
       return this.cache_cmp[h];
@@ -660,7 +663,6 @@ export class codex_model {
     var result = output.data.choices[0].text;
 
     this.cache_cmp[h] = result;
-    //await this.cache.put(text, result);
 
     return result;
   }
@@ -672,7 +674,7 @@ export class codex_model {
       return this.cache_exp[h];
     }
 
-    text += '\n// What the code does?';
+    text += '\n# What the code does?';
     let params = {
       model: 'code-davinci-002',
       prompt: text,
@@ -685,8 +687,7 @@ export class codex_model {
     };
 
     const output = await this.openai.createCompletion(params);
-    var result = output.data.choices[0].text.trim();
-    //const output = await this.openai.createCompletion(this.params['model']);
+    const result = output.data.choices[0].text.trim();
     this.cache_exp[h] = result;
     return result;
   }

@@ -449,26 +449,26 @@ const plugin: JupyterFrontEndPlugin<void> = {
         // });
         //
 
-        let toggled = false;
+        let toggled_remove_comments = false;
         let codex = new codex_model();
         app.commands.addCommand(CommandIDs.remove_comments, {
             label: 'Codex_remove_comments',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled,
+            isToggled: () => toggled_remove_comments,
             iconClass: 'some-css-icon-class',
             execute: async () => {
-                console.log(`toggeled ${toggled}`)
-                if (toggled) {
+                console.log(`toggeled ${toggled_remove_comments}`)
+                if (toggled_remove_comments) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled = true;
+                    toggled_remove_comments = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled = false;
+                    toggled_remove_comments = false;
                     return;
                 }
                 let len = notebooks.currentWidget.content.model.cells.length;
@@ -476,7 +476,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 cells_trim(notebooks);
                 if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
                     console.log('cells are empty!');
-                    toggled = false;
+                    toggled_remove_comments = false;
                     return;
                 }
 
@@ -488,36 +488,37 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 console.log(`Executed ${CommandIDs.remove_comments}`);
-                toggled = false;
+                toggled_remove_comments = false;
 
             }
         });
 
+        let toggled_codex_rc = false;
         app.commands.addCommand(CommandIDs.codex_rc, {
             label: 'Codex_readconf',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled,
+            isToggled: () => toggled_codex_rc,
             iconClass: 'some-css-icon-class',
             execute: async () => {
-                console.log(`toggeled ${toggled}`)
-                if (toggled) {
+                console.log(`toggeled ${toggled_codex_rc}`)
+                if (toggled_codex_rc) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled = true;
+                    toggled_codex_rc = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled = false;
+                    toggled_codex_rc = false;
                     return;
                 }
                 let len = notebooks.currentWidget.content.model.cells.length;
                 cells_trim(notebooks);
                 if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
                     console.log('cells are empty!');
-                    toggled = false;
+                    toggled_codex_rc = false;
                     return;
                 }
 
@@ -529,28 +530,30 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 console.log(`Executed ${CommandIDs.codex_rc}`);
-                toggled = false;
+                toggled_codex_rc = false;
 
             }
         });
+
+        let toggled_codex_sc = false;
           app.commands.addCommand(CommandIDs.codex_sc, {
             label: 'Codex_setconf',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled,
+            isToggled: () => toggled_codex_sc,
             iconClass: 'some-css-icon-class',
             execute: async () => {
-                console.log(`toggeled ${toggled}`)
-                if (toggled) {
+                console.log(`toggeled ${toggled_codex_sc}`)
+                if (toggled_codex_sc) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled = true;
+                    toggled_codex_sc = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled = false;
+                    toggled_codex_sc = false;
                     return;
                 }
 
@@ -562,35 +565,37 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 console.log(`Executed ${CommandIDs.codex_sc}`);
-                toggled = false;
+                toggled_codex_sc = false;
 
             }
         });
+
+          let toggled_codex = false;
         app.commands.addCommand(CommandIDs.codex, {
             label: 'Codex',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled,
+            isToggled: () => toggled_codex,
             iconClass: 'some-css-icon-class',
             execute: async () => {
-                console.log(`toggeled ${toggled}`)
-                if(toggled){
+                console.log(`toggeled ${toggled_codex}`)
+                if(toggled_codex){
                     console.log('running already');
                     return;
                 }else {
-                    toggled = true;
+                    toggled_codex = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled = false;
+                    toggled_codex = false;
                     return;
                 }
                 let len = notebooks.currentWidget.content.model.cells.length;
                 cells_trim(notebooks);
                 if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
                     console.log('cells are empty!');
-                    toggled = false;
+                    toggled_codex = false;
                     return;
                 }
 
@@ -625,38 +630,38 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 // notebooks.currentWidget.content.model.cells.push(cell);
                 // this._notebookPanel.content.model.cells.insert(0, cell);
                 console.log(`Executed ${CommandIDs.codex}`);
-                toggled = false;
+                toggled_codex = false;
                 // }
                 // })
             },
         });
 
-
+            let toggled_codex_ic = false;
                         app.commands.addCommand(CommandIDs.codex_ic, {
             label: 'Codex_in_cell',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled,
+            isToggled: () => toggled_codex_ic,
             iconClass: 'some-css-icon-class',
             execute: async () => {
-                console.log(`toggeled ${toggled}`)
-                if(toggled){
+                console.log(`toggeled ${toggled_codex_ic}`)
+                if(toggled_codex_ic){
                     console.log('running already');
                     return;
                 }else {
-                    toggled = true;
+                    toggled_codex_ic = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled = false;
+                    toggled_codex_ic = false;
                     return;
                 }
                 let len = notebooks.currentWidget.content.model.cells.length;
                 cells_trim(notebooks);
                 if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
                     console.log('cells are empty!');
-                    toggled = false;
+                    toggled_codex_ic = false;
                     return;
                 }
 
@@ -691,30 +696,30 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 // notebooks.currentWidget.content.model.cells.push(cell);
                 // this._notebookPanel.content.model.cells.insert(0, cell);
                 console.log(`Executed ${CommandIDs.codex_ic}`);
-                toggled = false;
+                toggled_codex_ic = false;
                 // }
                 // })
             },
                         });
-
+            let toggled_codex_output = false;
                       app.commands.addCommand(CommandIDs.codex_output, {
             label: 'Codex_ouput',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled,
+            isToggled: () => toggled_codex_output,
             iconClass: 'some-css-icon-class',
             execute: async () => {
-                console.log(`toggeled ${toggled}`)
-                if (toggled) {
+                console.log(`toggeled ${toggled_codex_output}`)
+                if (toggled_codex_output) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled = true;
+                    toggled_codex_output = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled = false;
+                    toggled_codex_output = false;
                     return;
                 }
 
@@ -726,7 +731,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 console.log(`Executed ${CommandIDs.codex_sc}`);
-                toggled = false;
+                toggled_codex_output = false;
            },
         });
 
