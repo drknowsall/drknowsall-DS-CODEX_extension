@@ -197,23 +197,18 @@ export class codex_model {
 
     if (explained) {
       for (let l = 0; l < cells.length; l++) {
-        if (cells.get(l).type == 'markdown') continue;
+        if (cells.get(l).type == 'markdown' || cells.get(l).value.text.trim()[0] == '#') continue;
 
         let cell_source = cells.get(l).value.text.trim() + '\n';
-        if (
-          cell_source.length <= 20 ||
-          cell_source.trim().substring(0, 10).indexOf('#') >= 0
-        ) {
-          continue;
-        }
 
         let exp = await this.codex_explain_call(cell_source);
-        exp = replaceAll(exp, '//', '#')
-        exp = replaceAll(exp, 'It', '').replace(/\s\s+/g, ' ').trim();
 
-        // exp = exp.charAt(0).toUpperCase() + exp.slice(1);
-        if (exp.length > 2) {
-          cells.get(l).value.text = exp + '\n' + cells.get(l).value.text;
+        if (exp.trim()[0] == '#' || exp.trim()[0] == '//')
+        {
+            exp = replaceAll(exp, '//', '#')
+            exp = replaceAll(exp, 'It', '').replace(/\s\s+/g, ' ').trim();
+
+            cells.get(l).value.text = exp + '\n' + cells.get(l).value.text;
         }
 
         // let cell = notebooks.currentWidget.content.model.contentFactory.createMarkdownCell({});
@@ -598,7 +593,7 @@ export class codex_model {
         //   cell.
         //   model.cells.push(cell);
         // }
-
+        codex_output = codex_output.trim();
         if (this.params['add_comments'] &&
           codex_output.indexOf('#') == 0 &&
           codex_output.charAt(2) == codex_output.charAt(2).toUpperCase()
@@ -662,7 +657,7 @@ export class codex_model {
     const output = await this.openai.createCompletion(params);
 
 
-    var result = output.data.choices[0].text.trim();
+    var result = output.data.choices[0].text;
 
     this.cache_cmp[h] = result;
     //await this.cache.put(text, result);
