@@ -39,9 +39,8 @@ namespace CommandIDs {
     export const codex_rc = 'codex:read_conf';
     export const codex_sc = 'codex:set_conf';
     export const codex_ic = 'codex_ic:invoke';
-
     export const remove_comments = 'codex:remove_comments';
-    export const select = 'completer:select';
+    export const codex_output = 'codex:output';
 
     export const selectNotebook = 'completer:select-notebook';
 }
@@ -230,6 +229,42 @@ export class ButtonExtension5
   }
 }
 
+export class ButtonExtension6
+  implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>
+{
+  /**
+   * Create a new extension for the notebook panel widget.
+   *
+   * @param panel Notebook panel
+   * @param context Notebook context
+   * @returns Disposable on the added button
+   */
+  app: JupyterFrontEnd
+  constructor(app: JupyterFrontEnd)
+  {
+      this.app = app
+  }
+  createNew(
+    panel: NotebookPanel,
+    context: DocumentRegistry.IContext<INotebookModel>,
+  ): IDisposable {
+    const codex_call = async () => {
+      await this.app.commands.execute(CommandIDs.codex_output);
+    };
+    const button = new ToolbarButton({
+      className: 'codexnb_output',
+      label: 'codex output',
+      onClick: codex_call,
+      tooltip: 'show model flow',
+    });
+
+    panel.toolbar.insertItem(15, 'show model flow', button);
+    return new DisposableDelegate(() => {
+      button.dispose();
+    });
+  }
+}
+
 // const id = 'foo-extension:IFoo';
 //
 // interface IFoo {}Token
@@ -383,6 +418,13 @@ const plugin: JupyterFrontEndPlugin<void> = {
             command: CommandIDs.codex_sc,
             args: {},
             keys: ['Accel 8'],
+            selector: '.jp-Notebook'
+        });
+
+        app.commands.addKeyBinding({
+            command: CommandIDs.codex_output,
+            args: {},
+            keys: ['Accel o'],
             selector: '.jp-Notebook'
         });
 
@@ -589,7 +631,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
             },
         });
 
-              app.commands.addCommand(CommandIDs.codex_ic, {
+
+                        app.commands.addCommand(CommandIDs.codex_ic, {
             label: 'Codex_in_cell',
             isEnabled: () => true,
             isVisible: () => true,
@@ -652,13 +695,48 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 // }
                 // })
             },
+                        });
+
+                      app.commands.addCommand(CommandIDs.codex_output, {
+            label: 'Codex_ouput',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggled,
+            iconClass: 'some-css-icon-class',
+            execute: async () => {
+                console.log(`toggeled ${toggled}`)
+                if (toggled) {
+                    console.log('running already');
+                    return;
+                } else {
+                    toggled = true;
+                }
+
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggled = false;
+                    return;
+                }
+
+                try {
+                    await codex.show_flow_output(notebooks, statusWidget)
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                console.log(`Executed ${CommandIDs.codex_sc}`);
+                toggled = false;
+           },
         });
+
 
         app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension(app));
         app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension2(app));
         app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension3(app));
         app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension4(app));
         app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension5(app));
+        app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension6(app));
     }
 }
 export default plugin;

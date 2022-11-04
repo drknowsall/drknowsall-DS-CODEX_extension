@@ -10,7 +10,71 @@ import { IDocumentManager } from '@jupyterlab/docmanager';
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { Widget} from '@lumino/widgets';
 
-//
+
+interface IQueue<T> {
+  enqueue(item: T): void;
+  dequeue(): T | undefined;
+  size(): number;
+}
+
+class Queue<T> implements IQueue<T> {
+  private storage: T[] = [];
+
+  constructor(private capacity: number = Infinity) {}
+
+  enqueue(item: T): void {
+    if (this.size() === this.capacity) {
+      throw Error("Queue has reached max capacity, you cannot add more items");
+    }
+    this.storage.push(item);
+  }
+  dequeue(): T | undefined {
+    return this.storage.shift();
+  }
+
+  clear()
+      {
+        while (this.storage.length > 0 && this.storage.pop());
+      }
+  size(): number {
+    return this.storage.length;
+  }
+}
+
+class Logger
+{
+  private queue : Queue<string>
+
+  constructor() {
+    this.queue = new Queue<string>();
+  }
+
+  set_message(str:string)
+  {
+    var currentdate = new Date();
+    var str = "["
+                + currentdate.getHours() + ":"
+                + currentdate.getMinutes() + ":"
+                + currentdate.getSeconds() + "] " + str;
+
+    this.queue.enqueue(str);
+  }
+
+  print_messages()
+  {
+    let str = '';
+
+    while (this.queue.size() > 0)
+    {
+      str += this.queue.dequeue() + '\n';
+    }
+    this.queue.clear();
+
+    return str;
+  }
+
+
+}
 
 function union(setA:Set<string>, setB:Set<string>) {
   const _union = new Set(setA);
@@ -87,6 +151,8 @@ export class codex_model {
   api_key: any;
   cache_cmp: any;
   cache_exp: any;
+  messages: Logger;
+  tokens_sent: number;
   constructor(
     codex_params = {
       model: 'code-davinci-002',
@@ -97,7 +163,7 @@ export class codex_model {
       best_of: 1,
       stop: ['# In[']
     }) {
-
+    this.tokens_sent = 0;
     this.params = {
       add_comments:true,
       add_codex_annotation:true,
@@ -112,6 +178,8 @@ export class codex_model {
     };
     this.cache_cmp = {};
     this.cache_exp = {};
+
+    this.messages = new Logger()
   }
 
   async add_comments(
@@ -123,7 +191,8 @@ export class codex_model {
     let append_import = true;
     let append_train = true;
     let append_test = true;
-
+    let append_visual = true;
+    let append_explore = true;
     let cells = notebooks.currentWidget!.content.model!.cells;
 
     if (explained) {
@@ -167,12 +236,18 @@ export class codex_model {
       if (cell_source.indexOf('Training the model') >= 0) {
         append_train = false;
       }
+        if (cell_source.indexOf('Data Exploration') >= 0) {
+        append_explore = false;
+      }
+       if (cell_source.indexOf('Visualization') >= 0) {
+        append_visual = false;
+      }
       if (cell_source.indexOf('Testing the model') >= 0) {
         append_test = false;
       }
-      if (cell_source.indexOf('[Created by codex]') >= 0) {
-        continue;
-      }
+      // if (cell_source.indexOf('[Created by codex]') >= 0) {
+      //   continue;
+      // }
       if (append_meta && cell_source.indexOf('read_csv') >= 0) {
 
         let fname_i1 = cell_source.indexOf("read_csv('") + "read_csv('".length;
@@ -183,7 +258,13 @@ export class codex_model {
         }
 
         let fname = cell_source.substring(fname_i1, fname_i2);
-        let file = await doc_manager.services.contents.get(fname);
+        let file;
+        try
+        {
+          file = await doc_manager.services.contents.get(fname);
+        } catch (e) {
+          file = null;
+        }
 
         if (file)
         {
@@ -197,21 +278,24 @@ export class codex_model {
           let dataset_meta =
             'Table ' + table_name + ', columns = [' + columns.join(' ,') + ']';
 
+          if (l == 0 || append_explore){
+            let cell = this.get_markdown(notebooks, 'Data Exploration', 'black');
+            cells.insert(l, cell);
+            l++;
+            append_explore = false;
+          }
+
           let cell = this.get_markdown(notebooks, dataset_meta, 'black');
-
           cells.insert(l, cell);
-
-          cell = this.get_markdown(notebooks, 'Data Exploration', 'black');
-
-          cells.insert(l + 2, cell);
-          l += 2;
+          l++;
         }
-        else
+        else if(l == 0 || append_explore)
         {
           let cell = this.get_markdown(notebooks, 'Data Exploration', 'black');
 
           cells.insert(l, cell);
           l += 1;
+          append_explore = false;
         }
 
       } else if (
@@ -225,7 +309,14 @@ export class codex_model {
         const cell = this.get_markdown(notebooks, 'Training the model', 'black');
         cells.insert(l, cell);
         l += 1;
-      } else if (
+      }
+      else if (append_visual && (cell_source.indexOf('plot') >= 0 || cell_source.indexOf('hist') >= 0 )) {
+        const cell = this.get_markdown(notebooks, 'Visualization', 'black');
+        cells.insert(l, cell);
+        l += 1;
+      }
+
+      else if (
         (append_test && cell_source.indexOf('test') >= 0) ||
         cell_source.indexOf('eval') >= 0 ||
         cell_source.indexOf('score') >= 0
@@ -283,10 +374,10 @@ export class codex_model {
           ).trim() + '\n';
 
       }
-
-      if (cell_source.indexOf('[Created by codex]') >= 0) {
-        continue;
-      }
+      //
+      // if (cell_source.indexOf('[Created by codex]') >= 0) {
+      //   continue;
+      // }
 
 
       if (append_borders) {
@@ -309,6 +400,7 @@ export class codex_model {
   remove_comments(notebooks: any, statusWidget: Widget)
   {
     statusWidget.node.textContent = 'removing comments..';
+
     let cells = notebooks.currentWidget.content.model.cells;
     for (let l = 0; l < cells.length; l++) {
       let cell_source = cells.get(l).value.text.trim();
@@ -339,9 +431,9 @@ export class codex_model {
           ).trim() + '\n';
       }
 
-      if (cell_source.indexOf('[Created by codex]') >= 0) {
-        continue;
-      }
+      // if (cell_source.indexOf('[Created by codex]') >= 0) {
+      //   continue;
+      // }
 
       if (append_borders) {
         cell_source = '# In[' + l + ']:\n' + cell_source;
@@ -417,12 +509,27 @@ export class codex_model {
         let cell = model.contentFactory.createCodeCell({});
 
         let params = this.params;
-        params['api_key'] = '';
+        if (!('api_key' in params))
+        {
+          params['api_key'] = '';
+        }
+
         cell.value.text = JSON.stringify(params,null, "\t");
 
         model.cells.push(cell);
   }
 
+  show_flow_output(notebooks: INotebookTracker, statusWidget: Widget)
+  {
+        console.log('Codex: show flow output..');
+        statusWidget.node.textContent = 'Codex: show flow output..';
+        const model = notebooks.currentWidget!.content.model!;
+
+        let raw_cell = model.contentFactory.createRawCell({});
+        raw_cell.value.text = this.messages.print_messages();
+
+        model.cells.push(raw_cell);
+  }
   async predict(
     notebooks: INotebookTracker,
     doc_manager: IDocumentManager,
@@ -430,49 +537,73 @@ export class codex_model {
     in_cell: boolean
   ) {
     console.log('Codex: extracting input..');
+    this.messages.set_message('Predicting');
     statusWidget.node.textContent = 'Codex: add comments..';
+
     if (this.params['add_comments'])
+      this.messages.set_message('Adding comments to code using codex');
       await this.add_comments(notebooks, doc_manager);
     let codex_input;
     statusWidget.node.textContent = 'Codex: extracting input..';
     if (this.params['extract_selective'])
+    {
+      this.messages.set_message('Extracting input cells - selective');
       codex_input = this.extract_input_selective(notebooks, in_cell);
+    }
     else
+    {
       codex_input = this.extract_input(notebooks, in_cell);
+      this.messages.set_message('Extracting input cells');
+    }
+
+    this.messages.set_message('Codex input: ' + '\n' + codex_input);
+
 
     let cell;
     statusWidget.node.textContent = 'Codex: predicted, #input tokens= ' + codex_input.length;
+    this.messages.set_message('Calling API');
     let codex_output = await this.codex_completion_call(codex_input);
     const model = notebooks.currentWidget!.content.model!;
 
+    this.messages.set_message('output: \n' + codex_output);
     // let doc_file = doc_manager.openOrReveal('codexnb');
     // doc_file!.node.textContent += 'heeeeelllllooooo';
     // doc_file = doc_manager.openOrReveal('Untitled.ipynb');
     // let out = console_tracker.currentWidget?.contentFactory.createOutputPrompt();
+    let last_cell = model.cells.get(model.cells.length - 1).value.text.trim();
+    if (model.cells.get(model.cells.length - 1).type =='markdown' && last_cell.indexOf('<') >=0)
+      {
+        last_cell = '# ' + last_cell.substring(
+          last_cell.indexOf(">") + 1,
+          last_cell.lastIndexOf("<")
+          ).trim();
 
-    if (model.cells.get(model.cells.length - 1).value.text == codex_output)
+      }
+
+    if (last_cell == codex_output.trim())
      {
-       statusWidget.node.textContent = 'Codex: duplicate prediction - ignore';
+       statusWidget.node.textContent = 'output is similar to previous cell - ignore';
+       this.messages.set_message('output is similar to previous cell - ignore');
        return;
     }
 
     if (in_cell)
     {
-
       model.cells.get(model.cells.length - 1).value.text += codex_output;
     }
     else
     {
-        if (this.params['add_codex_annotation']) {
-          cell = this.get_markdown(notebooks, '[Created by codex]', 'grey', 1);
-
-          model.cells.push(cell);
-        }
+        // if (this.params['add_codex_annotation']) {
+        //   cell = this.get_markdown(notebooks, '[Created by codex]', 'grey', 1);
+        //   cell.
+        //   model.cells.push(cell);
+        // }
 
         if (this.params['add_comments'] &&
           codex_output.indexOf('#') == 0 &&
           codex_output.charAt(2) == codex_output.charAt(2).toUpperCase()
         ) {
+          this.messages.set_message('a comment found in the prediction, adding it');
           let lines = codex_output.split('\n');
 
           cell = this.get_markdown(notebooks, lines[0], 'black');
@@ -480,6 +611,7 @@ export class codex_model {
           model.cells.push(cell);
 
           if (lines.length > 1) {
+            this.messages.set_message('a code block found as well, adding it');
             codex_output = lines.slice(1).join('\n').trim();
 
             cell = model.contentFactory.createCodeCell({});
@@ -489,6 +621,7 @@ export class codex_model {
             model.cells.push(cell);
           }
         } else {
+          this.messages.set_message('adding new cell with the results');
           cell = model.contentFactory.createCodeCell({});
           cell.value.text = codex_output;
 
@@ -502,8 +635,11 @@ export class codex_model {
         'output =\n' +
         codex_output
     );
+    this.tokens_sent += codex_input.length;
 
-    statusWidget.node.textContent = 'Codex: predicted successfully, #output tokens= ' + codex_output.length;
+    this.messages.set_message('Total tokens sent: ' + this.tokens_sent.toString());
+
+    statusWidget.node.textContent = 'Codex: predicted successfully,(input tokens= ' + codex_input.length + ")";
   }
 
   async codex_completion_call(text: string): Promise<string> {
@@ -516,6 +652,7 @@ export class codex_model {
     // }
 
     if (h in this.cache_cmp) {
+      this.messages.set_message('Cache used as prediction');
       return this.cache_cmp[h];
     }
 
