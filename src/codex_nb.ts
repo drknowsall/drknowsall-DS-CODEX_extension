@@ -181,10 +181,38 @@ export class codex_model {
     this.messages = new Logger()
   }
 
-  async add_comments(
+  async add_comments(notebooks: INotebookTracker)
+  {
+        let cells = notebooks.currentWidget!.content.model!.cells;
+
+        let md_cell = this.get_markdown(notebooks, 'Please wait for completion..', 'blue');
+
+        cells.push(md_cell);
+
+        for (let l = 0; l < cells.length-1; l++)
+        {
+          if (cells.get(l).type == 'markdown' || cells.get(l).value.text.trim()[0] == '#') continue;
+
+          let cell_source = cells.get(l).value.text.trim() + '\n';
+
+          let exp = await this.codex_explain_call(cell_source);
+
+          if ((exp.trim()[0] == '#' || exp.trim()[0] == '//' ) && exp.length > 3)
+          {
+              exp = replaceAll(exp, '//', '#')
+              exp = replaceAll(exp, 'above', 'below')
+              exp = replaceAll(exp, 'It', '').replace(/\s\s+/g, ' ').trim();
+
+              cells.get(l).value.text = exp + '\n' + cells.get(l).value.text;
+          }
+      }
+
+        cells.remove(cells.length-1);
+    }
+
+  async add_markdown_templates(
     notebooks: INotebookTracker,
-    doc_manager: IDocumentManager,
-    explained = true,
+    doc_manager: IDocumentManager
   ) {
     let append_meta = this.params['append_dataset_meta'];
     let append_import = true;
@@ -194,28 +222,6 @@ export class codex_model {
     let append_explore = true;
     let cells = notebooks.currentWidget!.content.model!.cells;
 
-    if (explained) {
-      for (let l = 0; l < cells.length; l++) {
-        if (cells.get(l).type == 'markdown' || cells.get(l).value.text.trim()[0] == '#') continue;
-
-        let cell_source = cells.get(l).value.text.trim() + '\n';
-
-        let exp = await this.codex_explain_call(cell_source);
-
-        if (exp.trim()[0] == '#' || exp.trim()[0] == '//')
-        {
-            exp = replaceAll(exp, '//', '#')
-            exp = replaceAll(exp, 'It', '').replace(/\s\s+/g, ' ').trim();
-
-            cells.get(l).value.text = exp + '\n' + cells.get(l).value.text;
-        }
-
-        // let cell = notebooks.currentWidget.content.model.contentFactory.createMarkdownCell({});
-        // cell.value.text = exp.trim();
-        // cells.insert(l, cell);
-        // l += 1;
-      }
-    }
     for (let l = 0; l < cells.length; l++) {
       let cell_source = cells.get(l).value.text.trim() + '\n';
       if (
@@ -239,9 +245,7 @@ export class codex_model {
       if (cell_source.indexOf('Testing the model') >= 0) {
         append_test = false;
       }
-      // if (cell_source.indexOf('[Created by codex]') >= 0) {
-      //   continue;
-      // }
+
       if (append_meta && cell_source.indexOf('read_csv') >= 0) {
 
         let fname_i1 = cell_source.indexOf("read_csv('") + "read_csv('".length;
@@ -294,7 +298,7 @@ export class codex_model {
 
       } else if (
         append_import &&
-        (cell_source.match(/import/g) || []).length >= 2
+        (cell_source.match(/import/g) || []).length >= 2 || ((cell_source.match(/import/g) || []).length < 2 && cell_source.split('\n').length < 2)
       ) {
         const cell = this.get_markdown(notebooks, 'Importing relevant libraries', 'black');
         cells.insert(l, cell);
@@ -309,7 +313,6 @@ export class codex_model {
         cells.insert(l, cell);
         l += 1;
       }
-
       else if (
         (append_test && cell_source.indexOf('test') >= 0) ||
         cell_source.indexOf('eval') >= 0 ||
@@ -531,12 +534,15 @@ export class codex_model {
     in_cell: boolean
   ) {
     console.log('Codex: extracting input..');
+
     this.messages.set_message('Predicting');
     statusWidget.node.textContent = 'Codex: add comments..';
 
-    if (this.params['add_comments'])
-      this.messages.set_message('Adding comments to code using codex');
-      await this.add_comments(notebooks, doc_manager);
+    if (this.params['add_comments'])  {
+      this.messages.set_message('Adding template markdowns');
+      await this.add_markdown_templates(notebooks, doc_manager);
+    }
+
     let codex_input;
     statusWidget.node.textContent = 'Codex: extracting input..';
     if (this.params['extract_selective'])
@@ -555,7 +561,14 @@ export class codex_model {
     let cell;
     statusWidget.node.textContent = 'Codex: Calling API (num tokens= ' + codex_input.length + ")";
     this.messages.set_message('Calling API');
+
+    const cells = notebooks.currentWidget!.content.model!.cells;
+
+    cells.push(this.get_markdown(notebooks, 'Please wait for completion..', 'blue'));
+
+
     let codex_output = await this.codex_completion_call(codex_input);
+    cells.remove(cells.length-1);
 
     if (codex_output.indexOf('In[') >= 0)
     {
@@ -604,11 +617,10 @@ export class codex_model {
     else
     {
         codex_output = codex_output.trim();
-        if (this.params['add_comments'] &&
-          codex_output.indexOf('#') == 0 &&
+        if (codex_output.indexOf('#') == 0 &&
           codex_output.charAt(2) == codex_output.charAt(2).toUpperCase()
         ) {
-          this.messages.set_message('a comment found in the prediction, adding it');
+          this.messages.set_message('a markdown cell found in the prediction, adding it');
           let lines = codex_output.split('\n');
 
           cell = this.get_markdown(notebooks, lines[0], 'black');
@@ -616,7 +628,7 @@ export class codex_model {
           model.cells.push(cell);
 
           if (lines.length > 1) {
-            this.messages.set_message('a code block found as well, adding it');
+            this.messages.set_message('a code cell found as well, adding it');
             codex_output = lines.slice(1).join('\n').trim();
 
             cell = model.contentFactory.createCodeCell({});
@@ -679,7 +691,7 @@ export class codex_model {
       model: 'code-davinci-002',
       prompt: text,
       temperature: 0,
-      max_tokens: 128,
+      max_tokens: 50,
       frequency_penalty: 0,
       presence_penalty: 0,
       best_of: 1,

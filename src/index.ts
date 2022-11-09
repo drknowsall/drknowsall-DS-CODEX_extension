@@ -40,6 +40,7 @@ namespace CommandIDs {
     export const codex_sc = 'codex:set_conf';
     export const codex_ic = 'codex_ic:invoke';
     export const remove_comments = 'codex:remove_comments';
+    export const add_comments = 'codex:add_comments'
     export const codex_output = 'codex:output';
 
     export const selectNotebook = 'completer:select-notebook';
@@ -412,7 +413,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
             keys: ['Accel -'],
             selector: '.jp-Notebook'
         });
-
+           app.commands.addKeyBinding({
+            command: CommandIDs.add_comments,
+            args: {},
+            keys: ['Accel +'],
+            selector: '.jp-Notebook'
+        });
 
         app.commands.addKeyBinding({
             command: CommandIDs.codex_sc,
@@ -463,6 +469,14 @@ const plugin: JupyterFrontEndPlugin<void> = {
           "type": "object"
         }
         });
+
+        app.contextMenu.addItem({
+          command: CommandIDs.add_comments,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
           app.contextMenu.addItem({
           command: CommandIDs.remove_comments,
           selector: '.jp-Notebook', args: {
@@ -470,6 +484,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
           "type": "object"
         }
         });
+
+
 
         app.contextMenu.addItem({
           command: CommandIDs.codex_output,
@@ -499,9 +515,52 @@ const plugin: JupyterFrontEndPlugin<void> = {
         //     console.log('results: %j', results);
         // });
         //
-
-        let toggled_remove_comments = false;
+        let toggled_add_comments = false;
         let codex = new codex_model();
+        app.commands.addCommand(CommandIDs.add_comments, {
+            label: 'Add Comments to Cells\t[Cmd +]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggled_add_comments,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
+            execute: async () => {
+                console.log(`toggeled ${toggled_add_comments}`)
+                if (toggled_add_comments) {
+                    console.log('running already');
+                    return;
+                } else {
+                    toggled_add_comments = true;
+                }
+
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggled_add_comments = false;
+                    return;
+                }
+                let len = notebooks.currentWidget.content.model.cells.length;
+
+                cells_trim(notebooks);
+                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
+                    console.log('cells are empty!');
+                    toggled_add_comments = false;
+                    return;
+                }
+
+                try {
+
+                    await codex.add_comments(notebooks)
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                console.log(`Executed ${CommandIDs.add_comments}`);
+                toggled_add_comments = false;
+
+            }
+        });
+        let toggled_remove_comments = false;
+
         app.commands.addCommand(CommandIDs.remove_comments, {
             label: 'Remove Comments in Cells\t[Cmd -]',
             isEnabled: () => true,
