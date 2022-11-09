@@ -62,7 +62,7 @@ class Logger
 
   print_messages()
   {
-    let str = '';
+    let str = 'Prediction Log:\n';
 
     while (this.queue.size() > 0)
     {
@@ -70,7 +70,7 @@ class Logger
     }
     this.queue.clear();
 
-    return str;
+    return str.slice(0, -1);
   }
 
 
@@ -152,6 +152,7 @@ export class codex_model {
   cache_exp: any;
   messages: Logger;
   tokens_sent: number;
+  tokens_recieved: number;
   constructor(
     codex_params = {
       model: 'code-davinci-002',
@@ -163,6 +164,7 @@ export class codex_model {
       stop: ['# In[']
     }) {
     this.tokens_sent = 0;
+    this.tokens_recieved = 0;
     this.params = {
       add_comments:true,
       add_codex_annotation:true,
@@ -194,6 +196,8 @@ export class codex_model {
           if (cells.get(l).type == 'markdown' || cells.get(l).value.text.trim()[0] == '#') continue;
 
           let cell_source = cells.get(l).value.text.trim() + '\n';
+          cell_source=cell_source.replace(/""".*"""\n/, '');
+          cell_source=cell_source.replace('\n""""""', '');
 
           let exp = await this.codex_explain_call(cell_source);
 
@@ -203,7 +207,16 @@ export class codex_model {
               exp = replaceAll(exp, 'above', 'below')
               exp = replaceAll(exp, 'It', '').replace(/\s\s+/g, ' ').trim();
 
-              cells.get(l).value.text = exp + '\n' + cells.get(l).value.text;
+              let comment = '';
+              for (let l of exp.split('\n'))
+              {
+                if (l.length > 3)
+                {
+                  comment += l + '\n';
+                }
+              }
+
+              cells.get(l).value.text = '"""Predicted With Codex"""\n' + comment + cell_source + '""""""';
           }
       }
 
@@ -221,6 +234,7 @@ export class codex_model {
     let append_visual = true;
     let append_explore = true;
     let cells = notebooks.currentWidget!.content.model!.cells;
+    let cells_i = []
 
     for (let l = 0; l < cells.length; l++) {
       let cell_source = cells.get(l).value.text.trim() + '\n';
@@ -281,16 +295,18 @@ export class codex_model {
             cells.insert(l, cell);
             l++;
             append_explore = false;
+
           }
 
           let cell = this.get_markdown(notebooks, dataset_meta, 'black');
+          cells_i.push(l+1);
           cells.insert(l, cell);
           l++;
         }
         else if(l == 0 || append_explore)
         {
           let cell = this.get_markdown(notebooks, 'Data Exploration', 'black');
-
+          cells_i.push(l+1);
           cells.insert(l, cell);
           l += 1;
           append_explore = false;
@@ -301,15 +317,18 @@ export class codex_model {
         (cell_source.match(/import/g) || []).length >= 2 || ((cell_source.match(/import/g) || []).length < 2 && cell_source.split('\n').length < 2)
       ) {
         const cell = this.get_markdown(notebooks, 'Importing relevant libraries', 'black');
+        cells_i.push(l+1);
         cells.insert(l, cell);
         l += 1;
       } else if (append_train && cell_source.indexOf('train') >= 0) {
         const cell = this.get_markdown(notebooks, 'Training the model', 'black');
+        cells_i.push(l+1);
         cells.insert(l, cell);
         l += 1;
       }
       else if (append_visual && (cell_source.indexOf('plot') >= 0 || cell_source.indexOf('hist') >= 0 )) {
         const cell = this.get_markdown(notebooks, 'Visualization', 'black');
+        cells_i.push(l+1);
         cells.insert(l, cell);
         l += 1;
       }
@@ -319,11 +338,17 @@ export class codex_model {
         cell_source.indexOf('score') >= 0
       ) {
         const cell = this.get_markdown(notebooks, 'Testing the model', 'black');
-
+        cells_i.push(l+1);
         cells.insert(l, cell);
         l += 1;
       }
     }
+    let cells_str = '[]';
+    if (cells_i.length > 0)
+    {
+      cells_str = cells_i.map(String).join(', ')
+    }
+    this.messages.set_message('Adding Template Markdowns to Cells:' + cells_str);
   }
 
   extract_input_selective(notebooks: any, in_cell: boolean): string {
@@ -415,11 +440,15 @@ export class codex_model {
 
     let append_borders = this.params['append_notebook_cell_borders'];
     let l = Math.max(0, cells.length - this.params['window_size']);
+    let cells_i = [];
 
     for (; l < cells.length; l++) {
 
+      cells_i.push(l);
       let cell_source = cells.get(l).value.text.trim() + '\n';
 
+      cell_source=cell_source.replace(/""".*"""\n/, '');
+      cell_source=cell_source.replace('\n""""""', '');
       if (cells.get(l).type =='markdown' && cell_source.indexOf('<') >=0)
       {
         cell_source =  '# ' + cell_source.substring(
@@ -445,6 +474,13 @@ export class codex_model {
       model_input = model_input + '\n' + '# In[' + l + ']:\n';
     }
 
+    let cells_str = '[]';
+    if (cells_i.length > 0)
+    {
+      cells_str = cells_i.map(String).join(', ')
+    }
+
+    this.messages.set_message('Extracting Input Cells: ' + cells_str);
     return model_input;
   }
   //
@@ -535,11 +571,10 @@ export class codex_model {
   ) {
     console.log('Codex: extracting input..');
 
-    this.messages.set_message('Predicting');
+
     statusWidget.node.textContent = 'Codex: add comments..';
 
     if (this.params['add_comments'])  {
-      this.messages.set_message('Adding template markdowns');
       await this.add_markdown_templates(notebooks, doc_manager);
     }
 
@@ -547,20 +582,16 @@ export class codex_model {
     statusWidget.node.textContent = 'Codex: extracting input..';
     if (this.params['extract_selective'])
     {
-      this.messages.set_message('Extracting input cells - selective');
       codex_input = this.extract_input_selective(notebooks, in_cell);
     }
     else
     {
       codex_input = this.extract_input(notebooks, in_cell);
-      this.messages.set_message('Extracting input cells');
     }
 
-    this.messages.set_message('Codex input: ' + '\n' + codex_input);
-
     let cell;
-    statusWidget.node.textContent = 'Codex: Calling API (num tokens= ' + codex_input.length + ")";
-    this.messages.set_message('Calling API');
+    statusWidget.node.textContent = 'Codex: Calling API (num tokens= ' + codex_input.length.toString() + ")";
+    this.messages.set_message('Calling Codex, #Input Tokens = ' + codex_input.length.toString());
 
     const cells = notebooks.currentWidget!.content.model!.cells;
 
@@ -568,6 +599,7 @@ export class codex_model {
 
 
     let codex_output = await this.codex_completion_call(codex_input);
+
     cells.remove(cells.length-1);
 
     if (codex_output.indexOf('In[') >= 0)
@@ -576,12 +608,7 @@ export class codex_model {
     }
     const model = notebooks.currentWidget!.content.model!;
 
-    let poutput = codex_output;
-    if (poutput.length > 20)
-    {
-      poutput = poutput.slice(0, 20) + '...';
-    }
-    this.messages.set_message('Codex output (length= ' + codex_output.length.toString() + '): \n' + poutput);
+    this.messages.set_message('Codex Response, #Output Tokens= ' + codex_output.length.toString());
 
     let last_cell = model.cells.get(model.cells.length - 1).value.text.trim();
     if (model.cells.get(model.cells.length - 1).type =='markdown' && last_cell.indexOf('<') >=0)
@@ -596,7 +623,7 @@ export class codex_model {
     if (last_cell == codex_output.trim())
      {
        statusWidget.node.textContent = 'output is identical to previous cell - ignore';
-       this.messages.set_message('output is identical to previous cell - ignore');
+       this.messages.set_message('Output is Identical to Previous Cell - Ignoring');
        return;
     }
 
@@ -607,10 +634,12 @@ export class codex_model {
     }
     if (in_cell)
     {
-      if (codex_output[codex_output.length-1] == '\n')
+      while (codex_output.length > 0 && codex_output[codex_output.length-1] == '\n')
       {
         codex_output = codex_output.slice(0, codex_output.length-1);
       }
+
+      codex_output += '\n""""""';
 
       model.cells.get(model.cells.length - 1).value.text += codex_output;
     }
@@ -620,7 +649,7 @@ export class codex_model {
         if (codex_output.indexOf('#') == 0 &&
           codex_output.charAt(2) == codex_output.charAt(2).toUpperCase()
         ) {
-          this.messages.set_message('a markdown cell found in the prediction, adding it');
+          this.messages.set_message('Output Contains A Markdown Cell');
           let lines = codex_output.split('\n');
 
           cell = this.get_markdown(notebooks, lines[0], 'black');
@@ -628,20 +657,20 @@ export class codex_model {
           model.cells.push(cell);
 
           if (lines.length > 1) {
-            this.messages.set_message('a code cell found as well, adding it');
+            this.messages.set_message('Output Contains A Code Block');
             codex_output = lines.slice(1).join('\n').trim();
 
             cell = model.contentFactory.createCodeCell({});
-
+            codex_output = '"""Predicted With Codex"""\n' + codex_output;
             cell.value.text = codex_output;
 
             model.cells.push(cell);
           }
         } else {
-          this.messages.set_message('adding new cell with the results');
           cell = model.contentFactory.createCodeCell({});
+          codex_output = '"""Predicted With Codex"""\n' + codex_output;
           cell.value.text = codex_output;
-
+          this.messages.set_message('Output Contains A Code Block');
           model.cells.push(cell);
         }
     }
@@ -653,16 +682,16 @@ export class codex_model {
         codex_output
     );
     this.tokens_sent += codex_input.length;
-
-    this.messages.set_message('Total tokens sent: ' + this.tokens_sent.toString());
-
+    this.tokens_recieved += codex_output.length;
+    this.messages.set_message('Total Tokens Sent in This Session: ' + this.tokens_sent.toString());
+    this.messages.set_message('Total Tokens Received in This Session: ' + this.tokens_recieved.toString());
     statusWidget.node.textContent = 'Codex: predicted successfully,(num tokens= ' + codex_output.length + ")";
   }
 
   async codex_completion_call(text: string): Promise<string> {
     const h = hashCode(text);
     if (h in this.cache_cmp) {
-      this.messages.set_message('Cache used as prediction');
+      this.messages.set_message('Cache Used');
       return this.cache_cmp[h];
     }
 
@@ -692,9 +721,9 @@ export class codex_model {
       prompt: text,
       temperature: 0,
       max_tokens: 50,
-      frequency_penalty: 0,
+      frequency_penalty: 2,
       presence_penalty: 0,
-      best_of: 1,
+      best_of: 3,
       stop: ['\n\n']
     };
 
