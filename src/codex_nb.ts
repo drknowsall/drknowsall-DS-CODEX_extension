@@ -634,14 +634,21 @@ export class codex_model {
     }
     if (in_cell)
     {
+      let cell_source = model.cells.get(model.cells.length - 1).value.text;
+
+      cell_source=cell_source.replace('\n""""""', '');
+
+      while (cell_source.length > 0 && cell_source[cell_source.length-1] == '\n')
+      {
+        cell_source = cell_source.slice(0, cell_source.length-1);
+      }
+
       while (codex_output.length > 0 && codex_output[codex_output.length-1] == '\n')
       {
         codex_output = codex_output.slice(0, codex_output.length-1);
       }
 
-      codex_output += '\n""""""';
-
-      model.cells.get(model.cells.length - 1).value.text += codex_output;
+      model.cells.get(model.cells.length - 1).value.text = cell_source + codex_output + '\n""""""';;
     }
     else
     {
