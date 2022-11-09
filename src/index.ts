@@ -428,6 +428,57 @@ const plugin: JupyterFrontEndPlugin<void> = {
             selector: '.jp-Notebook'
         });
 
+        app.contextMenu.addItem({
+          type: 'separator',
+            selector: '.jp-Notebook'
+        });
+
+         app.contextMenu.addItem({
+          command: CommandIDs.codex_sc,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
+         app.contextMenu.addItem({
+          command: CommandIDs.codex_rc,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
+        app.contextMenu.addItem({
+          command: CommandIDs.codex,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+        app.contextMenu.addItem({
+          command: CommandIDs.codex_ic,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+          app.contextMenu.addItem({
+          command: CommandIDs.remove_comments,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
+        app.contextMenu.addItem({
+          command: CommandIDs.codex_output,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
         //   var myPythonScriptPath = '/Users/guyhaimovitz/PycharmProjects/jupyter_extention_codex/notebooks-autocompletion';
         //
         // //  var PythonShell = require('python-shell').PythonShell;
@@ -452,11 +503,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
         let toggled_remove_comments = false;
         let codex = new codex_model();
         app.commands.addCommand(CommandIDs.remove_comments, {
-            label: 'Codex_remove_comments',
+            label: 'Remove Comments in Cells\t[Cmd -]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggled_remove_comments,
-            iconClass: 'some-css-icon-class',
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
             execute: async () => {
                 console.log(`toggeled ${toggled_remove_comments}`)
                 if (toggled_remove_comments) {
@@ -495,7 +546,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
         let toggled_codex_rc = false;
         app.commands.addCommand(CommandIDs.codex_rc, {
-            label: 'Codex_readconf',
+            label: 'Read Codex Configurations\t[Cmd 9]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggled_codex_rc,
@@ -537,7 +588,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
         let toggled_codex_sc = false;
           app.commands.addCommand(CommandIDs.codex_sc, {
-            label: 'Codex_setconf',
+            label: 'Show Codex Configurations\t[Cmd 8]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggled_codex_sc,
@@ -572,7 +623,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
           let toggled_codex = false;
         app.commands.addCommand(CommandIDs.codex, {
-            label: 'Codex',
+            label: 'Predict a New Cell\t[Cmd 0]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggled_codex,
@@ -637,8 +688,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
 
             let toggled_codex_ic = false;
-                        app.commands.addCommand(CommandIDs.codex_ic, {
-            label: 'Codex_in_cell',
+            app.commands.addCommand(CommandIDs.codex_ic, {
+            label: 'Predict a Suffix for Last Cell\t[Cmd 1]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggled_codex_ic,
@@ -702,8 +753,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
             },
                         });
             let toggled_codex_output = false;
-                      app.commands.addCommand(CommandIDs.codex_output, {
-            label: 'Codex_ouput',
+            app.commands.addCommand(CommandIDs.codex_output, {
+            label: 'View Prediction Log\t[Cmd o]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggled_codex_output,
@@ -735,13 +786,13 @@ const plugin: JupyterFrontEndPlugin<void> = {
            },
         });
 
-
-        app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension(app));
-        app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension2(app));
-        app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension3(app));
-        app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension4(app));
-        app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension5(app));
-        app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension6(app));
+        //
+        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension(app));
+        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension2(app));
+        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension3(app));
+        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension4(app));
+        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension5(app));
+        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension6(app));
     }
 }
 export default plugin;
