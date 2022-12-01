@@ -5,7 +5,7 @@
 ## Supporting the following operations:
 
 1. Predict new code and/or markdown cells.
-2. Predict a suffix for cell (completes the cell's content).
+2. Predict a suffix for a cell (completes the cell's content).
 3. Remove / Add comments to cells.
 
 ## The prediciton steps:
