@@ -8,7 +8,7 @@
 ## 2. Run codex in cell - Run completion for the current cell.
 ## 3. Remove / Add comments to cells
 
-## Flow
+## The prediciton steps:
 
 A. Input preproccessing:
 
