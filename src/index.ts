@@ -21,12 +21,12 @@ import {
 
 import { Widget} from '@lumino/widgets';
 
-import { IDisposable, DisposableDelegate } from '@lumino/disposable';
-import { DocumentRegistry } from '@jupyterlab/docregistry';
+// import { IDisposable, DisposableDelegate } from '@lumino/disposable';
+// import { DocumentRegistry } from '@jupyterlab/docregistry';
 import {INotebookTracker, NotebookPanel, INotebookModel} from '@jupyterlab/notebook';
 import {CompletionConnector} from './connector';
 import {CustomConnector} from './customconnector';
-import { ToolbarButton } from '@jupyterlab/apputils';
+// import { ToolbarButton } from '@jupyterlab/apputils';
 import {codex_model} from './codex_nb';
 
 /**
@@ -36,260 +36,18 @@ import {codex_model} from './codex_nb';
 
 namespace CommandIDs {
     export const codex = 'codex:invoke';
+    export const codex_ac = 'codex_ac:invoke';
     export const codex_rc = 'codex:read_conf';
     export const codex_sc = 'codex:set_conf';
     export const codex_ic = 'codex_ic:invoke';
+    export const codex_ic_ac = 'codex_ic_ac:invoke';
     export const remove_comments = 'codex:remove_comments';
     export const add_comments = 'codex:add_comments'
+    export const add_comments_ac = 'codex:add_comments_active_cell'
     export const codex_output = 'codex:output';
 
     export const selectNotebook = 'completer:select-notebook';
 }
-
-
-export class ButtonExtension
-  implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>
-{
-  /**
-   * Create a new extension for the notebook panel widget.
-   *
-   * @param panel Notebook panel
-   * @param context Notebook context
-   * @returns Disposable on the added button
-   */
-  app: JupyterFrontEnd
-  constructor(app: JupyterFrontEnd)
-  {
-      this.app = app
-  }
-  createNew(
-    panel: NotebookPanel,
-    context: DocumentRegistry.IContext<INotebookModel>,
-  ): IDisposable {
-    const codex_call = async () => {
-      await this.app.commands.execute(CommandIDs.codex);
-    };
-    const button = new ToolbarButton({
-      className: 'codexnb-button',
-      label: 'run codex',
-      onClick: codex_call,
-      tooltip: 'run codex',
-    });
-
-    panel.toolbar.insertItem(10, 'codex call', button);
-    return new DisposableDelegate(() => {
-      button.dispose();
-    });
-  }
-}
-
-
-export class ButtonExtension2
-  implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>
-{
-  /**
-   * Create a new extension for the notebook panel widget.
-   *
-   * @param panel Notebook panel
-   * @param context Notebook context
-   * @returns Disposable on the added button
-   */
-  app: JupyterFrontEnd
-  constructor(app: JupyterFrontEnd)
-  {
-      this.app = app
-  }
-  createNew(
-    panel: NotebookPanel,
-    context: DocumentRegistry.IContext<INotebookModel>,
-  ): IDisposable {
-    const codex_call = async () => {
-      await this.app.commands.execute(CommandIDs.codex_ic);
-    };
-    const button = new ToolbarButton({
-      className: 'codexnb_incell-button',
-      label: 'run codex in cell',
-      onClick: codex_call,
-      tooltip: 'run codex in cell',
-    });
-
-    panel.toolbar.insertItem(11, 'codex in call', button);
-    return new DisposableDelegate(() => {
-      button.dispose();
-    });
-  }
-}
-
-
-export class ButtonExtension3
-  implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>
-{
-  /**
-   * Create a new extension for the notebook panel widget.
-   *
-   * @param panel Notebook panel
-   * @param context Notebook context
-   * @returns Disposable on the added button
-   */
-  app: JupyterFrontEnd
-  constructor(app: JupyterFrontEnd)
-  {
-      this.app = app
-  }
-  createNew(
-    panel: NotebookPanel,
-    context: DocumentRegistry.IContext<INotebookModel>,
-  ): IDisposable {
-    const codex_call = async () => {
-      await this.app.commands.execute(CommandIDs.remove_comments);
-    };
-    const button = new ToolbarButton({
-      className: 'codexnb_incell-button',
-      label: 'remove comments from cells',
-      onClick: codex_call,
-      tooltip: 'remove comments from cells',
-    });
-
-    panel.toolbar.insertItem(12, 'remove comments from cells', button);
-    return new DisposableDelegate(() => {
-      button.dispose();
-    });
-  }
-}
-
-
-export class ButtonExtension4
-  implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>
-{
-  /**
-   * Create a new extension for the notebook panel widget.
-   *
-   * @param panel Notebook panel
-   * @param context Notebook context
-   * @returns Disposable on the added button
-   */
-  app: JupyterFrontEnd
-  constructor(app: JupyterFrontEnd)
-  {
-      this.app = app
-  }
-  createNew(
-    panel: NotebookPanel,
-    context: DocumentRegistry.IContext<INotebookModel>,
-  ): IDisposable {
-    const codex_call = async () => {
-      await this.app.commands.execute(CommandIDs.codex_sc);
-    };
-    const button = new ToolbarButton({
-      className: 'codexnb_set_conf',
-      label: 'set codex configurations',
-      onClick: codex_call,
-      tooltip: 'set codex configurations',
-    });
-
-    panel.toolbar.insertItem(13, 'set codex configurations', button);
-    return new DisposableDelegate(() => {
-      button.dispose();
-    });
-  }
-}
-
-export class ButtonExtension5
-  implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>
-{
-  /**
-   * Create a new extension for the notebook panel widget.
-   *
-   * @param panel Notebook panel
-   * @param context Notebook context
-   * @returns Disposable on the added button
-   */
-  app: JupyterFrontEnd
-  constructor(app: JupyterFrontEnd)
-  {
-      this.app = app
-  }
-  createNew(
-    panel: NotebookPanel,
-    context: DocumentRegistry.IContext<INotebookModel>,
-  ): IDisposable {
-    const codex_call = async () => {
-      await this.app.commands.execute(CommandIDs.codex_rc);
-    };
-    const button = new ToolbarButton({
-      className: 'codexnb_read_conf',
-      label: 'read codex configurations',
-      onClick: codex_call,
-      tooltip: 'read codex configurations',
-    });
-
-    panel.toolbar.insertItem(14, 'read codex configurations', button);
-    return new DisposableDelegate(() => {
-      button.dispose();
-    });
-  }
-}
-
-export class ButtonExtension6
-  implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel>
-{
-  /**
-   * Create a new extension for the notebook panel widget.
-   *
-   * @param panel Notebook panel
-   * @param context Notebook context
-   * @returns Disposable on the added button
-   */
-  app: JupyterFrontEnd
-  constructor(app: JupyterFrontEnd)
-  {
-      this.app = app
-  }
-  createNew(
-    panel: NotebookPanel,
-    context: DocumentRegistry.IContext<INotebookModel>,
-  ): IDisposable {
-    const codex_call = async () => {
-      await this.app.commands.execute(CommandIDs.codex_output);
-    };
-    const button = new ToolbarButton({
-      className: 'codexnb_output',
-      label: 'codex output',
-      onClick: codex_call,
-      tooltip: 'show model flow',
-    });
-
-    panel.toolbar.insertItem(15, 'show model flow', button);
-    return new DisposableDelegate(() => {
-      button.dispose();
-    });
-  }
-}
-
-// const id = 'foo-extension:IFoo';
-//
-// interface IFoo {}Token
-//
-// class Foo implements IFoo {}
-//
-// const plugin: JupyterFrontEndPlugin<IFoo> = {
-//   id,
-//   autoStart: true,
-//   requires: [IStateDB],
-//   provides: IFoo,
-//   activate: (app: JupyterFrontEnd, state: IStateDB): IFoo => {
-//     const foo = new Foo();
-//     const key = `${id}:some-attribute`;
-//
-//     // Load the saved plugin state and apply it once the app
-//     // has finished restoring its former layout.
-//     Promise.all([state.fetch(key), app.restored])
-//       .then(([saved]) => { /* Update `foo` with `saved`. */ });
-//
-//     // Fulfill the plugin contract by returning an `IFoo`.
-//     return foo;
-//   }
-// };
 
 function cells_trim(notebooks: INotebookTracker)
 {
@@ -310,7 +68,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     autoStart: true,
     requires: [ICompletionManager, INotebookTracker, IDocumentManager, ILabStatus, IStatusBar],
 
-    activate: async (app: JupyterFrontEnd, completionManager: ICompletionManager, notebooks: INotebookTracker, doc_manager: IDocumentManager, lab_status: ILabStatus, status_bar: IStatusBar) => {
+    activate: async (app: JupyterFrontEnd, completionManager: ICompletionManager, notebooks: INotebookTracker, doc_manager: IDocumentManager, lab_status: ILabStatus, status_bar: IStatusBar, nbmodel:INotebookModel) => {
         console.log('JupyterLab extension codexnb -_-');
          // let cache = Cache();
         // const key = `codexnb:plugin:some-attribute`;
@@ -393,14 +151,24 @@ const plugin: JupyterFrontEndPlugin<void> = {
             keys: ['Accel 0'],
             selector: '.jp-Notebook'
         });
-
+        app.commands.addKeyBinding({
+            command: CommandIDs.codex_ac,
+            args: {},
+            keys: ['Accel 0a'],
+            selector: '.jp-Notebook'
+        });
         app.commands.addKeyBinding({
             command: CommandIDs.codex_ic,
             args: {},
             keys: ['Accel 1'],
             selector: '.jp-Notebook'
         });
-
+        app.commands.addKeyBinding({
+            command: CommandIDs.codex_ic_ac,
+            args: {},
+            keys: ['Accel 1a'],
+            selector: '.jp-Notebook'
+        });
            app.commands.addKeyBinding({
             command: CommandIDs.codex_rc,
             args: {},
@@ -419,7 +187,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
             keys: ['Accel +'],
             selector: '.jp-Notebook'
         });
-
+        app.commands.addKeyBinding({
+            command: CommandIDs.add_comments_ac,
+            args: {},
+            keys: ['Accel +a'],
+            selector: '.jp-Notebook'
+        });
         app.commands.addKeyBinding({
             command: CommandIDs.codex_sc,
             args: {},
@@ -462,8 +235,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
           "type": "object"
         }
         });
-        app.contextMenu.addItem({
-          command: CommandIDs.codex_ic,
+          app.contextMenu.addItem({
+          command: CommandIDs.codex_ac,
           selector: '.jp-Notebook', args: {
           "description": "Command arguments",
           "type": "object"
@@ -471,7 +244,27 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
 
         app.contextMenu.addItem({
+          command: CommandIDs.codex_ic,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+        app.contextMenu.addItem({
+          command: CommandIDs.codex_ic_ac,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+        app.contextMenu.addItem({
           command: CommandIDs.add_comments,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }});
+        app.contextMenu.addItem({
+          command: CommandIDs.add_comments_ac,
           selector: '.jp-Notebook', args: {
           "description": "Command arguments",
           "type": "object"
@@ -559,6 +352,51 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
             }
         });
+
+        let toggled_add_comments_ac = false;
+        app.commands.addCommand(CommandIDs.add_comments_ac, {
+            label: 'Add Comments to Current Cell\t[Cmd +a]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggled_add_comments,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
+            execute: async () => {
+                console.log(`toggeled ${toggled_add_comments_ac}`)
+                if (toggled_add_comments_ac) {
+                    console.log('running already');
+                    return;
+                } else {
+                    toggled_add_comments_ac = true;
+                }
+
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggled_add_comments_ac = false;
+                    return;
+                }
+                let len = notebooks.currentWidget.content.model.cells.length;
+
+                cells_trim(notebooks);
+                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
+                    console.log('cells are empty!');
+                    toggled_add_comments_ac = false;
+                    return;
+                }
+
+                try {
+
+                    await codex.add_comments(notebooks, notebooks.currentWidget.content.activeCellIndex)
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                console.log(`Executed ${CommandIDs.add_comments_ac}`);
+                toggled_add_comments_ac = false;
+
+            }
+        });
+
         let toggled_remove_comments = false;
 
         app.commands.addCommand(CommandIDs.remove_comments, {
@@ -745,7 +583,71 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 // })
             },
         });
+        let toggled_codex_ac = false;
+        app.commands.addCommand(CommandIDs.codex_ac, {
+            label: 'Predict a New Cell After Current Cell\t[Cmd 0a]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggled_codex_ac,
+            iconClass: 'some-css-icon-class',
+            execute: async () => {
+                console.log(`toggeled ${toggled_codex_ac}`)
+                if(toggled_codex_ac){
+                    console.log('running already');
+                    return;
+                }else {
+                    toggled_codex_ac = true;
+                }
 
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggled_codex_ac = false;
+                    return;
+                }
+                let len = notebooks.currentWidget.content.model.cells.length;
+                cells_trim(notebooks);
+                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
+                    console.log('cells are empty!');
+                    toggled_codex_ac = false;
+                    return;
+                }
+
+                //cell.value.text = "hellloooooo";
+                //var nb_json = notebooks.currentWidget.content.model.toString();
+
+                //var cells = notebooks.currentWidget.content.model.cells;
+                try {
+                    await codex.predict(notebooks, doc_manager, statusWidget, false, notebooks.currentWidget.content.activeCellIndex);
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                // codex.predict(notebooks.currentWidget.content.model.cells, doc_manager).then(()=>
+                // {
+                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content.model) {return}
+                //
+                //     const cell = notebooks.currentWidget.content.model.contentFactory.createCodeCell({});
+                //     cell.value.text = response;
+                //     notebooks.currentWidget.content.model.cells.push(cell);
+                // });
+                //   // `.then()` is called after the request is complete
+                //   // this is part of the Fetch API for handling JSON-encoded responses
+                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content || !notebooks.currentWidget.model ) {return null}
+                //
+                //     notebooks.currentWidget.content.model.cells.push(cell);
+                //   return cell.value.text = response;
+                // });
+
+                // cell.value.text = response;
+                // notebooks.currentWidget.content.model.cells.push(cell);
+                // this._notebookPanel.content.model.cells.insert(0, cell);
+                console.log(`Executed ${CommandIDs.codex_ac}`);
+                toggled_codex_ac = false;
+                // }
+                // })
+            },
+        });
             let toggled_codex_ic = false;
             app.commands.addCommand(CommandIDs.codex_ic, {
             label: 'Predict a Suffix for Last Cell\t[Cmd 1]',
@@ -811,6 +713,72 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 // })
             },
                         });
+            let toggled_codex_ic_ac = false;
+            app.commands.addCommand(CommandIDs.codex_ic_ac, {
+            label: 'Predict a Suffix for Current Cell\t[Cmd 1a]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggled_codex_ic_ac,
+            iconClass: 'some-css-icon-class',
+            execute: async () => {
+                console.log(`toggeled ${toggled_codex_ic_ac}`)
+                if(toggled_codex_ic_ac){
+                    console.log('running already');
+                    return;
+                }else {
+                    toggled_codex_ic_ac = true;
+                }
+
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggled_codex_ic_ac = false;
+                    return;
+                }
+                let len = notebooks.currentWidget.content.model.cells.length;
+                cells_trim(notebooks);
+                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
+                    console.log('cells are empty!');
+                    toggled_codex_ic_ac = false;
+                    return;
+                }
+
+                //cell.value.text = "hellloooooo";
+                //var nb_json = notebooks.currentWidget.content.model.toString();
+
+                //var cells = notebooks.currentWidget.content.model.cells;
+                try {
+                    await codex.predict(notebooks, doc_manager, statusWidget, true, notebooks.currentWidget.content.activeCellIndex);
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                // codex.predict(notebooks.currentWidget.content.model.cells, doc_manager).then(()=>
+                // {
+                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content.model) {return}
+                //
+                //     const cell = notebooks.currentWidget.content.model.contentFactory.createCodeCell({});
+                //     cell.value.text = response;
+                //     notebooks.currentWidget.content.model.cells.push(cell);
+                // });
+                //   // `.then()` is called after the request is complete
+                //   // this is part of the Fetch API for handling JSON-encoded responses
+                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content || !notebooks.currentWidget.model ) {return null}
+                //
+                //     notebooks.currentWidget.content.model.cells.push(cell);
+                //   return cell.value.text = response;
+                // });
+
+                // cell.value.text = response;
+                // notebooks.currentWidget.content.model.cells.push(cell);
+                // this._notebookPanel.content.model.cells.insert(0, cell);
+                console.log(`Executed ${CommandIDs.codex_ic_ac}`);
+                toggled_codex_ic_ac = false;
+                // }
+                // })
+            },
+                        });
+
             let toggled_codex_output = false;
             app.commands.addCommand(CommandIDs.codex_output, {
             label: 'View Prediction Log\t[Cmd o]',

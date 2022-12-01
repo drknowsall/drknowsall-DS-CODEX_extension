@@ -183,7 +183,7 @@ export class codex_model {
     this.messages = new Logger()
   }
 
-  async add_comments(notebooks: INotebookTracker)
+  async add_comments(notebooks: INotebookTracker, cell_index=-1)
   {
         let cells = notebooks.currentWidget!.content.model!.cells;
 
@@ -193,6 +193,7 @@ export class codex_model {
 
         for (let l = 0; l < cells.length-1; l++)
         {
+          if (cell_index >= 0 && cell_index != l) continue
           if (cells.get(l).type == 'markdown' || cells.get(l).value.text.trim()[0] == '#') continue;
 
           let cell_source = cells.get(l).value.text.trim() + '\n';
@@ -351,12 +352,15 @@ export class codex_model {
     this.messages.set_message('Adding Template Markdowns to Cells:' + cells_str);
   }
 
-  extract_input_selective(notebooks: any, in_cell: boolean): string {
+  extract_input_selective(notebooks: any, in_cell: boolean, current_cell = -1): string {
     let cells = notebooks.currentWidget.content.model.cells;
 
      if (cells.length == 1)
         return this.extract_input(notebooks, in_cell);
-
+    if (current_cell < 0)
+    {
+      current_cell = cells.length-1
+    }
     let cells_content: string[] = [];
 
     let append_borders = this.params['append_notebook_cell_borders'];
@@ -365,9 +369,9 @@ export class codex_model {
     let min_sim = 1.;
     //let sum_sim = 0.;
 
-    let c0 = cells.get(cells.length-1).value.text.trim();
+    let c0 = cells.get(current_cell).value.text.trim();
 
-    for (let l = 0 ; l < cells.length-1; l++) {
+    for (let l = 0 ; l < current_cell; l++) {
       let c1 = cells.get(l).value.text.trim();
       let s = jaccard_similarity(c0, c1)
       if (s < min_sim)
@@ -379,7 +383,7 @@ export class codex_model {
     //let avg_sim = sum_sim / cells.length
 
     let k = 0 ;
-    for (let l = 0 ; l < cells.length; l++) {
+    for (let l = 0 ; l <= current_cell; l++) {
       let cell_source = cells.get(l).value.text.trim();
 
 
@@ -394,7 +398,8 @@ export class codex_model {
           cell_source.indexOf(">") + 1,
           cell_source.lastIndexOf("<")
           ).trim() + '\n';
-
+          cell_source=cell_source.replace(/""".*"""\n/, '');
+          cell_source=cell_source.replace('\n""""""', '');
       }
       //
       // if (cell_source.indexOf('[Created by codex]') >= 0) {
@@ -434,15 +439,18 @@ export class codex_model {
     statusWidget.node.textContent = 'done!';
   }
 
-  extract_input(notebooks: any, in_cell: boolean): string {
+  extract_input(notebooks: any, in_cell: boolean, current_cell = -1): string {
     let cells = notebooks.currentWidget.content.model.cells;
     let cells_content: string[] = [];
-
+    if (current_cell < 0)
+    {
+      current_cell = cells.length-1;
+    }
     let append_borders = this.params['append_notebook_cell_borders'];
-    let l = Math.max(0, cells.length - this.params['window_size']);
+    let l = Math.max(0, current_cell+1 - this.params['window_size']);
     let cells_i = [];
 
-    for (; l < cells.length; l++) {
+    for (; l <= current_cell; l++) {
 
       cells_i.push(l);
       let cell_source = cells.get(l).value.text.trim() + '\n';
@@ -455,6 +463,8 @@ export class codex_model {
           cell_source.indexOf(">") + 1,
           cell_source.lastIndexOf("<")
           ).trim() + '\n';
+          cell_source=cell_source.replace(/""".*"""\n/, '');
+          cell_source=cell_source.replace('\n""""""', '');
       }
 
       // if (cell_source.indexOf('[Created by codex]') >= 0) {
@@ -520,11 +530,12 @@ export class codex_model {
         return
   }
 
-  get_markdown(notebooks: INotebookTracker, text:string, color:string, size= 5)
+  get_markdown(notebooks: INotebookTracker, text:string, color:string, size= 5, add_codex_indicator:boolean=false)
   {
         const model = notebooks.currentWidget!.content.model!;
         let md_cell = model.contentFactory.createMarkdownCell({});
-
+        if (add_codex_indicator)
+          text = '"""Predicted With Codex"""\n' + text + '""""""';
         md_cell.value.text = "<font color=\'" + color  + "\'" + " size=\'" + size.toString()  + "px" + "\'" + ">" + replaceAll(text, '#', '') + '</font>';
         return md_cell;
   }
@@ -567,8 +578,17 @@ export class codex_model {
     notebooks: INotebookTracker,
     doc_manager: IDocumentManager,
     statusWidget: Widget,
-    in_cell: boolean
+    in_cell: boolean,
+    current_cell = -1
   ) {
+
+    const model = notebooks.currentWidget!.content.model!;
+
+    if (current_cell < 0)
+    {
+      current_cell = model.cells.length-1;
+    }
+
     console.log('Codex: extracting input..');
 
 
@@ -582,11 +602,11 @@ export class codex_model {
     statusWidget.node.textContent = 'Codex: extracting input..';
     if (this.params['extract_selective'])
     {
-      codex_input = this.extract_input_selective(notebooks, in_cell);
+      codex_input = this.extract_input_selective(notebooks, in_cell, current_cell);
     }
     else
     {
-      codex_input = this.extract_input(notebooks, in_cell);
+      codex_input = this.extract_input(notebooks, in_cell, current_cell);
     }
 
     let cell;
@@ -606,12 +626,11 @@ export class codex_model {
     {
       codex_output = codex_output.slice(0, codex_output.indexOf('In['))
     }
-    const model = notebooks.currentWidget!.content.model!;
 
     this.messages.set_message('Codex Response, #Output Tokens= ' + codex_output.length.toString());
 
-    let last_cell = model.cells.get(model.cells.length - 1).value.text.trim();
-    if (model.cells.get(model.cells.length - 1).type =='markdown' && last_cell.indexOf('<') >=0)
+    let last_cell = model.cells.get(current_cell).value.text.trim();
+    if (model.cells.get(current_cell).type =='markdown' && last_cell.indexOf('<') >=0)
       {
         last_cell = '# ' + last_cell.substring(
           last_cell.indexOf(">") + 1,
@@ -627,14 +646,14 @@ export class codex_model {
        return;
     }
 
-    let index = /[a-z]/i.exec(codex_output)!.index;
+    let index = /[()a-z]/i.exec(codex_output)!.index;
 
     if (index > 0 && codex_output.trim()[0] != '#'){
       in_cell = true;
     }
     if (in_cell)
     {
-      let cell_source = model.cells.get(model.cells.length - 1).value.text;
+      let cell_source = model.cells.get(current_cell).value.text;
 
       cell_source=cell_source.replace('\n""""""', '');
 
@@ -647,8 +666,11 @@ export class codex_model {
       {
         codex_output = codex_output.slice(0, codex_output.length-1);
       }
+      let lc = model.cells.get(current_cell)
+      lc.value.text = cell_source + codex_output;
 
-      model.cells.get(model.cells.length - 1).value.text = cell_source + codex_output + '\n""""""';;
+      if (cell_source.indexOf('""""""') >= 0)
+        lc.value.text += '\n""""""';
     }
     else
     {
@@ -659,9 +681,10 @@ export class codex_model {
           this.messages.set_message('Output Contains A Markdown Cell');
           let lines = codex_output.split('\n');
 
-          cell = this.get_markdown(notebooks, lines[0], 'black');
+          cell = this.get_markdown(notebooks, lines[0], 'black',5, true);
 
-          model.cells.push(cell);
+          model.cells.insert(current_cell+1, cell);
+
 
           if (lines.length > 1) {
             this.messages.set_message('Output Contains A Code Block');
@@ -671,16 +694,28 @@ export class codex_model {
             codex_output = '"""Predicted With Codex"""\n' + codex_output;
             cell.value.text = codex_output;
 
-            model.cells.push(cell);
+            model.cells.insert(current_cell+1, cell);
+
           }
         } else {
           cell = model.contentFactory.createCodeCell({});
           codex_output = '"""Predicted With Codex"""\n' + codex_output;
           cell.value.text = codex_output;
           this.messages.set_message('Output Contains A Code Block');
-          model.cells.push(cell);
+          model.cells.insert(current_cell+1, cell);
         }
     }
+
+    // if (current_cell >= 0)
+    // {
+    //     // for (let i =0; i < cells_to_keep.length;i++)
+    //     // {
+    //     //   model.cells.insertAll(model.cells.length, cells_to_keep);
+    //     // }
+    //
+    //   model.cells.pushAll(cells_to_keep);
+    // }
+
     console.log(
       'Codex: predict, #tokens= ' + codex_input.length + ' input =\n' +
         codex_input +
