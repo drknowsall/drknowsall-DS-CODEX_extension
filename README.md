@@ -1,11 +1,38 @@
 # CodexNB
+
 ## A Jupyter extention for auto-completetion and automatic code decorations, internally using OpenAI's codex - https://openai.com/blog/openai-codex/ with improved input selection that is specifically designed for notebooks usage and datascience pipeline. (API key is needed)
 
 ## Supporting the following operations:
 
 ## 1. Run codex - Run completion for the next cell.
 ## 2. Run codex in cell - Run completion for the current cell.
-## 3. Remove comments - remove all comments from the cells.
+## 3. Remove / Add comments to cells
+
+## Flow
+
+A. Input preproccessing:
+
+1. Extract the *relevant* model input from the current and previus cells according to extraction_method, either extract_selective or window extraction
+	* extract_selective:
+		extract only the cells that are highly correleted with the active cell + the active cell (correlation is majored using a content similarity comparision)
+	* extract_window:
+		extract only the previus cells that are within the window (e.g. if window_size is 3 -> extract last 3 cells)
+2. Add template cells if needed - add markdown cells above code cells that contains certain keywords in order to optimize future predictions aswell as completing the code structure and adding a proper documentation. (e.g. when reading an existing csv file a markdown cell is automaticlly being add on top of that cell, this markdown cell contains a metadata of the dataframe read from the csv file).
+
+3. Adding notebook structure tokens for a more accurate future prediction. (e.g. cells ordinals, borders etc..)
+
+B. Calling the API - calling codex API for the predicition
+
+C. Post preoccessing:
+
+1. Extract markdown and/or code cells found within the response.
+2. Insert the content in the relevant location, inside a specific cell or as new cells (according to the type and the number of cells extracted from the output).
+
+
+The input extraction methods are optimized for data-science pipelines and notebook (cell based) predictions.
+The methods has being tuned and trained on a dataset of high rated kaggle notebooks and showd an improved accuracy while comparing to the standalone model.
+For further details please see: https://github.com/drknowsall/notebooks-autocompletion
+
 
 ## Requirements
 
@@ -43,7 +70,6 @@ The extension parameters:
 	"extract_selective": false, # Whether to feed codex the cells in the default way - window or only pick the most relevant cells. 
 	"append_markdown": true, # Whether to also return markdown cells.
 	"append_notebook_cell_borders": true, # Improves the input structure for notebook usage.
-	"append_dataset_meta": true, # Appends the name of the table, columns in every csv file that is being read by pandas.
 	"window_size": 3, # The window size to use if extract_selective is false.
 	"model_name": "codex",
 	"model": {
@@ -53,7 +79,6 @@ The extension parameters:
 	},
 	"api_key": ""
 }
-
 
 ## Contributing
 
