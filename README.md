@@ -4,9 +4,9 @@
 
 ## Supporting the following operations:
 
-## 1. Run codex - Run completion for the next cell.
-## 2. Run codex in cell - Run completion for the current cell.
-## 3. Remove / Add comments to cells
+## 1. Predict new code and/or markdown cells.
+## 2. Predict a suffix for cell (completes the cell's content).
+## 3. Remove / Add comments to cells.
 
 ## The prediciton steps:
 
