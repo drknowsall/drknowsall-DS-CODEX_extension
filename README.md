@@ -31,6 +31,7 @@ C. Post preoccessing:
 
 The input extraction methods are optimized for data-science pipelines and notebook (cell based) predictions.
 The methods has being tuned and trained on a dataset of high rated kaggle notebooks and showd an improved accuracy while comparing to the standalone model.
+
 For further details please see: https://github.com/drknowsall/notebooks-autocompletion
 
 
