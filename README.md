@@ -32,6 +32,8 @@ C. Post preoccessing:
 *The input extraction methods are optimized for data-science pipelines and notebook (cell based) predictions.
 The methods has being tuned and trained on a dataset of high rated kaggle notebooks and showd an improved accuracy while comparing to the standalone model.
 
+<img width="1321" alt="Screen Shot 2022-12-02 at 3 37 30" src="https://user-images.githubusercontent.com/99599998/206860404-17a1f780-d7a2-4f55-97eb-173648061903.png">
+
 For further details please see: https://github.com/drknowsall/notebooks-autocompletion
 
 
@@ -55,31 +57,31 @@ To remove the extension, execute:
 pip uninstall codex_nb_autocomplete
 ```
 
-## Setting extension configurations: 
-
-Press "set codex configurations"
-Insert the api key at the buttom.
-Press "read codex configurations"
-
-You are ready to go!
-
 The extension parameters:
 
-{
-	"add_comments": true, # Whether to automaticlly add comments to your code.
-	"add_codex_annotation": false, # Adds a small cell indicating that the cell below is the output of codex.
-	"extract_selective": false, # Whether to feed codex the cells in the default way - window or only pick the most relevant cells. 
-	"append_markdown": true, # Whether to also return markdown cells.
-	"append_notebook_cell_borders": true, # Improves the input structure for notebook usage.
-	"window_size": 3, # The window size to use if extract_selective is false.
-	"model_name": "codex",
-	"model": {
-		"model": "code-davinci-002", 
-		"temperature": 0, # Increase this value for more "surprising results"
-		"max_tokens": 256, # Max tokens to be sent to the API
-	},
-	"api_key": ""
-}
+	- "add_comments_before_prediction": false, # Whether to automaticlly add comments to your code before the prediction step (the comments will not be presented in the user cells.)
+	
+	- "add_markdowns_before_prediction": true, # Whether to automaticlly add markdown cells to your code (by keywords matching) before the prediction step (the markdown cells will not be presented in the user cells.)
+	
+	- "add_cell_structure": true, # Whether to represent the prediction input as a notebook.
+	
+	- "extract_selective": false, # Whether to extract cells using the selective method (if false then the default window based extraction is used).
+	
+	- "max_sim_ratio": 0.1, # max similarity ratio for selective extraction - the ratio between the similarity of the last cell before prediction and the closest cell w.r.t to the similarity method we use: (https://en.wikipedia.org/wiki/Jaccard_index),
+	*All cells with similarities ratios higher then max_sim_ratio will be extracted and passed as input to the model.
+	
+	- "window_size": 3, # The window size to use if extract_selective is false.
+	- "API_key": "", # OpenAI API Key. 
+	- "add_codex_annotation": true, # Whether to add an indication that the cell has being predicted by Codex.
+
+## Setting extension configurations: 
+
+Press the right key on any cell in the notebook and then on "View Codex Configurations"
+A new cell will be shown (the last cell) that contains the configurations.
+Insert the api key and optionaly edit the configuration.
+Press "Save Codex Configurations"
+
+You are ready to go!
 
 ## Contributing
 
