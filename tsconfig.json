@@ -20,5 +20,9 @@
     "target": "es2017",
     "types": ["jest", "node"]
   },
-  "include": ["src/*"]
+  "include": [
+    "src/*",
+    "lib/common.d.ts",
+    "lib/common.d.ts"
+  ]
 }

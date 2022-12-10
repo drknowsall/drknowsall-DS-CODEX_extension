@@ -21,13 +21,11 @@ import {
 
 import { Widget} from '@lumino/widgets';
 
-// import { IDisposable, DisposableDelegate } from '@lumino/disposable';
-// import { DocumentRegistry } from '@jupyterlab/docregistry';
-import {INotebookTracker, NotebookPanel, INotebookModel} from '@jupyterlab/notebook';
+import {INotebookTracker, NotebookPanel} from '@jupyterlab/notebook';
 import {CompletionConnector} from './connector';
 import {CustomConnector} from './customconnector';
-// import { ToolbarButton } from '@jupyterlab/apputils';
-import {codex_model} from './codex_nb';
+//import {codex_model} from './codex_nb';
+import {CodexNB} from './CodexNB';
 
 /**
  * Initialization data for the codexnb extension.
@@ -35,59 +33,42 @@ import {codex_model} from './codex_nb';
 
 
 namespace CommandIDs {
-    export const codex = 'codex:invoke';
-    export const codex_ac = 'codex_ac:invoke';
-    export const codex_rc = 'codex:read_conf';
-    export const codex_sc = 'codex:set_conf';
-    export const codex_ic = 'codex_ic:invoke';
-    export const codex_ic_ac = 'codex_ic_ac:invoke';
-    export const remove_comments = 'codex:remove_comments';
-    export const add_comments = 'codex:add_comments'
-    export const add_comments_ac = 'codex:add_comments_active_cell'
-    export const codex_output = 'codex:output';
-
-    export const selectNotebook = 'completer:select-notebook';
+    export const predict_new = 'predict_new:invoke';
+    export const predict_in = 'predict_in:invoke';
+    export const add_comments = 'add_comments:invoke';
+    export const add_comments_all = 'add_comments_all:invoke';
+    export const add_markdowns = 'add_markdowns:invoke';
+    export const add_markdowns_all = 'add_markdowns_all:invoke';
+    export const pred_log = 'pred_log:invoke';
+    export const obj_log = 'obj_log:invoke'
+    export const clr_logs = 'clr_logs:invoke'
+    export const show_conf = 'show_conf:invoke';
+    export const save_conf = 'save_conf:invoke';
+    export const reset_conf = 'reset_conf:invoke';
 }
 
-function cells_trim(notebooks: INotebookTracker)
-{
-    let cells = notebooks!.currentWidget!.content!.model!.cells;
-    let i = cells.length - 1;
-
-    while (cells.length > 0 && cells.get(i).value.text == '')
-    {
-        cells.remove(i);
-        i --;
-    }
-}
-
-
+//
+// function cells_trim(notebooks: INotebookTracker)
+// {
+//     let cells = notebooks!.currentWidget!.content!.model!.cells;
+//     let i = cells.length - 1;
+//
+//     while (cells.length > 0 && cells.get(i).value.text == '')
+//     {
+//         cells.remove(i);
+//         i --;
+//     }
+// }
 
 const plugin: JupyterFrontEndPlugin<void> = {
     id: 'codexnb:plugin',
     autoStart: true,
     requires: [ICompletionManager, INotebookTracker, IDocumentManager, ILabStatus, IStatusBar],
 
-    activate: async (app: JupyterFrontEnd, completionManager: ICompletionManager, notebooks: INotebookTracker, doc_manager: IDocumentManager, lab_status: ILabStatus, status_bar: IStatusBar, nbmodel:INotebookModel) => {
+    activate: async (app: JupyterFrontEnd, completionManager: ICompletionManager, notebooks: INotebookTracker, doc_manager: IDocumentManager, lab_status: ILabStatus, status_bar: IStatusBar) => {
         console.log('JupyterLab extension codexnb -_-');
-         // let cache = Cache();
-        // const key = `codexnb:plugin:some-attribute`;
 
-    // Load the saved plugin state and apply it once the app
-    // has finished restoring its former layout.
-    // Promise.all([state_db.fetch(key), app.restored])
-    //   .then(([saved]) => { /* Update `foo` with `saved`. */ });
-        // doc_manager.createNew('cache');
-
-
-        // doc_file.
-        // doc_file!.node.textContent = '\0';
-        //doc_manager.autosave = true;
         const statusWidget = new Widget();
-
-        // lab_status.busySignal.connect(() => {
-        //   statusWidget.node.textContent = lab_status.isBusy ? 'Busy' : 'Idle';
-        // });
 
         status_bar.registerStatusItem('lab-status', {
           align: 'middle',
@@ -127,83 +108,89 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 panel.content.activeCellChanged.connect(updateConnector);
                 panel.sessionContext.sessionChanged.connect(updateConnector);
             });
-        // Add notebook completer select command.
-        // app.commands.addCommand(CommandIDs.selectNotebook, {
-        //   execute: () => {
-        //     const id = notebooks.currentWidget && notebooks.currentWidget.id;
-        //
-        //     if (id) {
-        //       return app.commands.execute(CommandIDs.select, { id });
-        //     }
-        //   },
-        // });
 
-        // Set enter key for notebook completer select command.
-        // app.commands.addKeyBinding({
-        //     command: CommandIDs.selectNotebook,
-        //     keys: ['Enter'],
-        //     selector: '.jp-Notebook .jp-mod-completer-active',
-        // });
 
         app.commands.addKeyBinding({
-            command: CommandIDs.codex,
+            command: CommandIDs.predict_new,
             args: {},
             keys: ['Accel 0'],
             selector: '.jp-Notebook'
         });
+
         app.commands.addKeyBinding({
-            command: CommandIDs.codex_ac,
-            args: {},
-            keys: ['Accel 0a'],
-            selector: '.jp-Notebook'
-        });
-        app.commands.addKeyBinding({
-            command: CommandIDs.codex_ic,
+            command: CommandIDs.predict_in,
             args: {},
             keys: ['Accel 1'],
             selector: '.jp-Notebook'
         });
+
         app.commands.addKeyBinding({
-            command: CommandIDs.codex_ic_ac,
+            command: CommandIDs.add_comments_all,
             args: {},
-            keys: ['Accel 1a'],
+            keys: ['Accel 2'],
             selector: '.jp-Notebook'
         });
-           app.commands.addKeyBinding({
-            command: CommandIDs.codex_rc,
-            args: {},
-            keys: ['Accel 9'],
-            selector: '.jp-Notebook'
-        });
-           app.commands.addKeyBinding({
-            command: CommandIDs.remove_comments,
-            args: {},
-            keys: ['Accel -'],
-            selector: '.jp-Notebook'
-        });
-           app.commands.addKeyBinding({
+
+         app.commands.addKeyBinding({
             command: CommandIDs.add_comments,
             args: {},
-            keys: ['Accel +'],
+            keys: ['Accel 3'],
             selector: '.jp-Notebook'
         });
-        app.commands.addKeyBinding({
-            command: CommandIDs.add_comments_ac,
+
+         app.commands.addKeyBinding({
+            command: CommandIDs.add_markdowns_all,
             args: {},
-            keys: ['Accel +a'],
+            keys: ['Accel 4'],
             selector: '.jp-Notebook'
         });
-        app.commands.addKeyBinding({
-            command: CommandIDs.codex_sc,
+
+         app.commands.addKeyBinding({
+            command: CommandIDs.add_markdowns,
+            args: {},
+            keys: ['Accel 5'],
+            selector: '.jp-Notebook'
+        });
+
+         app.commands.addKeyBinding({
+            command: CommandIDs.pred_log,
+            args: {},
+            keys: ['Accel 6'],
+            selector: '.jp-Notebook'
+        });
+
+         app.commands.addKeyBinding({
+            command: CommandIDs.obj_log,
+            args: {},
+            keys: ['Accel 7'],
+            selector: '.jp-Notebook'
+        });
+
+         app.commands.addKeyBinding({
+            command: CommandIDs.clr_logs,
             args: {},
             keys: ['Accel 8'],
             selector: '.jp-Notebook'
         });
 
-        app.commands.addKeyBinding({
-            command: CommandIDs.codex_output,
+         app.commands.addKeyBinding({
+            command: CommandIDs.show_conf,
             args: {},
-            keys: ['Accel o'],
+            keys: ['Accel 9'],
+            selector: '.jp-Notebook'
+        });
+
+         app.commands.addKeyBinding({
+            command: CommandIDs.save_conf,
+            args: {},
+            keys: ['Accel 9 s'],
+            selector: '.jp-Notebook'
+        });
+
+         app.commands.addKeyBinding({
+            command: CommandIDs.reset_conf,
+            args: {},
+            keys: ['Accel 9 r'],
             selector: '.jp-Notebook'
         });
 
@@ -211,17 +198,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
           type: 'separator',
             selector: '.jp-Notebook'
         });
-
-         app.contextMenu.addItem({
-          command: CommandIDs.codex_sc,
-          selector: '.jp-Notebook', args: {
-          "description": "Command arguments",
-          "type": "object"
-        }
-        });
-
-         app.contextMenu.addItem({
-          command: CommandIDs.codex_rc,
+        app.contextMenu.addItem({
+          command: CommandIDs.predict_new,
           selector: '.jp-Notebook', args: {
           "description": "Command arguments",
           "type": "object"
@@ -229,14 +207,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
 
         app.contextMenu.addItem({
-          command: CommandIDs.codex,
-          selector: '.jp-Notebook', args: {
-          "description": "Command arguments",
-          "type": "object"
-        }
-        });
-          app.contextMenu.addItem({
-          command: CommandIDs.codex_ac,
+          command: CommandIDs.predict_in,
           selector: '.jp-Notebook', args: {
           "description": "Command arguments",
           "type": "object"
@@ -244,582 +215,530 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
 
         app.contextMenu.addItem({
-          command: CommandIDs.codex_ic,
+          command: CommandIDs.add_comments_all,
           selector: '.jp-Notebook', args: {
           "description": "Command arguments",
           "type": "object"
         }
         });
-        app.contextMenu.addItem({
-          command: CommandIDs.codex_ic_ac,
-          selector: '.jp-Notebook', args: {
-          "description": "Command arguments",
-          "type": "object"
-        }
-        });
+
         app.contextMenu.addItem({
           command: CommandIDs.add_comments,
           selector: '.jp-Notebook', args: {
           "description": "Command arguments",
           "type": "object"
-        }});
-        app.contextMenu.addItem({
-          command: CommandIDs.add_comments_ac,
-          selector: '.jp-Notebook', args: {
-          "description": "Command arguments",
-          "type": "object"
         }
         });
-          app.contextMenu.addItem({
-          command: CommandIDs.remove_comments,
-          selector: '.jp-Notebook', args: {
-          "description": "Command arguments",
-          "type": "object"
-        }
-        });
-
-
 
         app.contextMenu.addItem({
-          command: CommandIDs.codex_output,
+          command: CommandIDs.add_markdowns_all,
           selector: '.jp-Notebook', args: {
           "description": "Command arguments",
           "type": "object"
         }
         });
 
-        //   var myPythonScriptPath = '/Users/guyhaimovitz/PycharmProjects/jupyter_extention_codex/notebooks-autocompletion';
-        //
-        // //  var PythonShell = require('python-shell').PythonShell;
-        //
-        //   var options = {
-        //       mode: 'text',
-        //       // pythonPath: 'path/to/python',
-        //       pythonOptions: ['-u'],
-        //       scriptPath: myPythonScriptPath,
-        //       args: ['value1', 'value2', 'value3']
-        //   };
-        //   console.log("options:" + options + " powershell" + PythonShell)
+        app.contextMenu.addItem({
+          command: CommandIDs.add_markdowns,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
 
-        //
-        // PythonShell.run('evaluate_autocomplete_model.py', options, function (err: any, results: any) {
-        //     if (err) throw err;
-        //     // results is an array consisting of messages collected during execution
-        //     console.log('results: %j', results);
-        // });
-        //
-        let toggled_add_comments = false;
-        let codex = new codex_model();
-        app.commands.addCommand(CommandIDs.add_comments, {
-            label: 'Add Comments to Cells\t[Cmd +]',
+        app.contextMenu.addItem({
+          command: CommandIDs.pred_log,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
+        app.contextMenu.addItem({
+          command: CommandIDs.obj_log,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
+        app.contextMenu.addItem({
+          command: CommandIDs.clr_logs,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
+        app.contextMenu.addItem({
+          command: CommandIDs.show_conf,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
+        app.contextMenu.addItem({
+          command: CommandIDs.save_conf,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
+        app.contextMenu.addItem({
+          command: CommandIDs.reset_conf,
+          selector: '.jp-Notebook', args: {
+          "description": "Command arguments",
+          "type": "object"
+        }
+        });
+
+        let codex_nb = new CodexNB(doc_manager);
+
+        let toggle = false;
+        app.commands.addCommand(CommandIDs.predict_new, {
+            label: 'Predict a New Cell\t\t[Cmd 0]',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled_add_comments,
+            isToggled: () => toggle,
             // iconClass: 'jp-MaterialIcon jp-LinkIcon',
             execute: async () => {
-                console.log(`toggeled ${toggled_add_comments}`)
-                if (toggled_add_comments) {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled_add_comments = true;
+                    toggle = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled_add_comments = false;
+                    toggle = false;
                     return;
                 }
-                let len = notebooks.currentWidget.content.model.cells.length;
 
-                cells_trim(notebooks);
-                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
+                if (notebooks.currentWidget.content.model.cells.length == 0) {
                     console.log('cells are empty!');
-                    toggled_add_comments = false;
+                    toggle = false;
                     return;
                 }
 
                 try {
 
-                    await codex.add_comments(notebooks)
+                    await codex_nb.predict_new_cell(notebooks.currentWidget.content.model, notebooks.currentWidget.content.activeCellIndex);
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                console.log(`Executed ${CommandIDs.predict_new}`);
+                toggle = false;
+            }
+        });
+
+       app.commands.addCommand(CommandIDs.predict_in, {
+            label: 'Predict In Cell\t\t[Cmd 1]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggle,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
+            execute: async () => {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
+                    console.log('running already');
+                    return;
+                } else {
+                    toggle = true;
+                }
+
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggle = false;
+                    return;
+                }
+
+                if (notebooks.currentWidget.content.model.cells.length == 0) {
+                    console.log('cells are empty!');
+                    toggle = false;
+                    return;
+                }
+
+                try {
+
+                    await codex_nb.predict_in_cell(notebooks.currentWidget.content.model, notebooks.currentWidget.content.activeCellIndex);
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                console.log(`Executed ${CommandIDs.predict_in}`);
+                toggle = false;
+            }
+        });
+
+       app.commands.addCommand(CommandIDs.add_comments_all, {
+            label: 'Add Comments to all Cells\t\t[Cmd 2]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggle,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
+            execute: async () => {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
+                    console.log('running already');
+                    return;
+                } else {
+                    toggle = true;
+                }
+
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggle = false;
+                    return;
+                }
+
+                if (notebooks.currentWidget.content.model.cells.length == 0) {
+                    console.log('cells are empty!');
+                    toggle = false;
+                    return;
+                }
+
+                try {
+
+                    await codex_nb.add_comments_to_all_cells(notebooks.currentWidget.content.model);
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                console.log(`Executed ${CommandIDs.add_comments_all}`);
+                toggle = false;
+            }
+        });
+
+            app.commands.addCommand(CommandIDs.add_comments, {
+            label: 'Add Comments to Active Cell\t\t[Cmd 3]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggle,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
+            execute: async () => {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
+                    console.log('running already');
+                    return;
+                } else {
+                    toggle = true;
+                }
+
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggle = false;
+                    return;
+                }
+
+                if (notebooks.currentWidget.content.model.cells.length == 0) {
+                    console.log('cells are empty!');
+                    toggle = false;
+                    return;
+                }
+
+                try {
+
+                    await codex_nb.add_comment_to_active_cell(notebooks.currentWidget.content.model, notebooks.currentWidget.content.activeCellIndex);
 
                 } catch (e) {
                     console.error(e.text);
                 }
 
                 console.log(`Executed ${CommandIDs.add_comments}`);
-                toggled_add_comments = false;
-
+                toggle = false;
             }
         });
 
-        let toggled_add_comments_ac = false;
-        app.commands.addCommand(CommandIDs.add_comments_ac, {
-            label: 'Add Comments to Current Cell\t[Cmd +a]',
+            app.commands.addCommand(CommandIDs.add_markdowns_all, {
+            label: 'Try Add Markdowns\t\t[Cmd 4]',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled_add_comments,
+            isToggled: () => toggle,
             // iconClass: 'jp-MaterialIcon jp-LinkIcon',
             execute: async () => {
-                console.log(`toggeled ${toggled_add_comments_ac}`)
-                if (toggled_add_comments_ac) {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled_add_comments_ac = true;
+                    toggle = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled_add_comments_ac = false;
+                    toggle = false;
                     return;
                 }
-                let len = notebooks.currentWidget.content.model.cells.length;
 
-                cells_trim(notebooks);
-                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
+                if (notebooks.currentWidget.content.model.cells.length == 0) {
                     console.log('cells are empty!');
-                    toggled_add_comments_ac = false;
+                    toggle = false;
                     return;
                 }
 
                 try {
 
-                    await codex.add_comments(notebooks, notebooks.currentWidget.content.activeCellIndex)
+                    await codex_nb.add_markdowns_to_all_cells(notebooks.currentWidget.content.model);
 
                 } catch (e) {
                     console.error(e.text);
                 }
 
-                console.log(`Executed ${CommandIDs.add_comments_ac}`);
-                toggled_add_comments_ac = false;
-
+                console.log(`Executed ${CommandIDs.add_markdowns_all}`);
+                toggle = false;
             }
         });
 
-        let toggled_remove_comments = false;
-
-        app.commands.addCommand(CommandIDs.remove_comments, {
-            label: 'Remove Comments in Cells\t[Cmd -]',
+            app.commands.addCommand(CommandIDs.add_markdowns, {
+            label: 'Try Add Markdowns to Active Cell\t\t[Cmd 5]',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled_remove_comments,
+            isToggled: () => toggle,
             // iconClass: 'jp-MaterialIcon jp-LinkIcon',
             execute: async () => {
-                console.log(`toggeled ${toggled_remove_comments}`)
-                if (toggled_remove_comments) {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled_remove_comments = true;
+                    toggle = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled_remove_comments = false;
+                    toggle = false;
                     return;
                 }
-                let len = notebooks.currentWidget.content.model.cells.length;
 
-                cells_trim(notebooks);
-                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
+                if (notebooks.currentWidget.content.model.cells.length == 0) {
                     console.log('cells are empty!');
-                    toggled_remove_comments = false;
+                    toggle = false;
                     return;
                 }
 
                 try {
-                    await codex.remove_comments(notebooks, statusWidget)
+
+                    await codex_nb.add_markdown_to_active_cell(notebooks.currentWidget.content.model, notebooks.currentWidget.content.activeCellIndex);
 
                 } catch (e) {
                     console.error(e.text);
                 }
 
-                console.log(`Executed ${CommandIDs.remove_comments}`);
-                toggled_remove_comments = false;
-
+                console.log(`Executed ${CommandIDs.add_markdowns}`);
+                toggle = false;
             }
         });
 
-        let toggled_codex_rc = false;
-        app.commands.addCommand(CommandIDs.codex_rc, {
-            label: 'Read Codex Configurations\t[Cmd 9]',
+            app.commands.addCommand(CommandIDs.pred_log, {
+            label: 'View Prediction Log\t\t[Cmd 6]',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled_codex_rc,
-            iconClass: 'some-css-icon-class',
+            isToggled: () => toggle,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
             execute: async () => {
-                console.log(`toggeled ${toggled_codex_rc}`)
-                if (toggled_codex_rc) {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled_codex_rc = true;
+                    toggle = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled_codex_rc = false;
-                    return;
-                }
-                let len = notebooks.currentWidget.content.model.cells.length;
-                cells_trim(notebooks);
-                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
-                    console.log('cells are empty!');
-                    toggled_codex_rc = false;
+                    toggle = false;
                     return;
                 }
 
                 try {
-                    await codex.read_conf(notebooks, statusWidget)
+
+                    await codex_nb.show_prediction_log(notebooks.currentWidget.content.model);
 
                 } catch (e) {
                     console.error(e.text);
                 }
 
-                console.log(`Executed ${CommandIDs.codex_rc}`);
-                toggled_codex_rc = false;
-
+                console.log(`Executed ${CommandIDs.pred_log}`);
+                toggle = false;
             }
         });
 
-        let toggled_codex_sc = false;
-          app.commands.addCommand(CommandIDs.codex_sc, {
-            label: 'Show Codex Configurations\t[Cmd 8]',
+               app.commands.addCommand(CommandIDs.obj_log, {
+            label: 'View Objects Log\t\t[Cmd 7]',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled_codex_sc,
-            iconClass: 'some-css-icon-class',
+            isToggled: () => toggle,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
             execute: async () => {
-                console.log(`toggeled ${toggled_codex_sc}`)
-                if (toggled_codex_sc) {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled_codex_sc = true;
+                    toggle = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled_codex_sc = false;
+                    toggle = false;
                     return;
                 }
 
                 try {
-                    await codex.set_conf(notebooks, statusWidget)
+
+                    await codex_nb.show_obj_log(notebooks.currentWidget.content.model);
 
                 } catch (e) {
                     console.error(e.text);
                 }
 
-                console.log(`Executed ${CommandIDs.codex_sc}`);
-                toggled_codex_sc = false;
+                console.log(`Executed ${CommandIDs.obj_log}`);
+                toggle = false;
+            }
+        });
+               app.commands.addCommand(CommandIDs.clr_logs, {
+            label: 'Clear Logs\t\t[Cmd 8]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggle,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
+            execute: async () => {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
+                    console.log('running already');
+                    return;
+                } else {
+                    toggle = true;
+                }
 
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggle = false;
+                    return;
+                }
+
+                try {
+
+                    await codex_nb.clear_logs();
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                console.log(`Executed ${CommandIDs.clr_logs}`);
+                toggle = false;
             }
         });
 
-          let toggled_codex = false;
-        app.commands.addCommand(CommandIDs.codex, {
-            label: 'Predict a New Cell\t[Cmd 0]',
+    app.commands.addCommand(CommandIDs.show_conf, {
+            label: 'View Configurations\t\t[Cmd 9]',
             isEnabled: () => true,
             isVisible: () => true,
-            isToggled: () => toggled_codex,
-            iconClass: 'some-css-icon-class',
+            isToggled: () => toggle,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
             execute: async () => {
-                console.log(`toggeled ${toggled_codex}`)
-                if(toggled_codex){
-                    console.log('running already');
-                    return;
-                }else {
-                    toggled_codex = true;
-                }
-
-                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
-                    console.log('current widget is null!');
-                    toggled_codex = false;
-                    return;
-                }
-                let len = notebooks.currentWidget.content.model.cells.length;
-                cells_trim(notebooks);
-                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
-                    console.log('cells are empty!');
-                    toggled_codex = false;
-                    return;
-                }
-
-                //cell.value.text = "hellloooooo";
-                //var nb_json = notebooks.currentWidget.content.model.toString();
-
-                //var cells = notebooks.currentWidget.content.model.cells;
-                try {
-                    await codex.predict(notebooks, doc_manager, statusWidget, false);
-
-                } catch (e) {
-                    console.error(e.text);
-                }
-
-                // codex.predict(notebooks.currentWidget.content.model.cells, doc_manager).then(()=>
-                // {
-                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content.model) {return}
-                //
-                //     const cell = notebooks.currentWidget.content.model.contentFactory.createCodeCell({});
-                //     cell.value.text = response;
-                //     notebooks.currentWidget.content.model.cells.push(cell);
-                // });
-                //   // `.then()` is called after the request is complete
-                //   // this is part of the Fetch API for handling JSON-encoded responses
-                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content || !notebooks.currentWidget.model ) {return null}
-                //
-                //     notebooks.currentWidget.content.model.cells.push(cell);
-                //   return cell.value.text = response;
-                // });
-
-                // cell.value.text = response;
-                // notebooks.currentWidget.content.model.cells.push(cell);
-                // this._notebookPanel.content.model.cells.insert(0, cell);
-                console.log(`Executed ${CommandIDs.codex}`);
-                toggled_codex = false;
-                // }
-                // })
-            },
-        });
-        let toggled_codex_ac = false;
-        app.commands.addCommand(CommandIDs.codex_ac, {
-            label: 'Predict a New Cell After Current Cell\t[Cmd 0a]',
-            isEnabled: () => true,
-            isVisible: () => true,
-            isToggled: () => toggled_codex_ac,
-            iconClass: 'some-css-icon-class',
-            execute: async () => {
-                console.log(`toggeled ${toggled_codex_ac}`)
-                if(toggled_codex_ac){
-                    console.log('running already');
-                    return;
-                }else {
-                    toggled_codex_ac = true;
-                }
-
-                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
-                    console.log('current widget is null!');
-                    toggled_codex_ac = false;
-                    return;
-                }
-                let len = notebooks.currentWidget.content.model.cells.length;
-                cells_trim(notebooks);
-                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
-                    console.log('cells are empty!');
-                    toggled_codex_ac = false;
-                    return;
-                }
-
-                //cell.value.text = "hellloooooo";
-                //var nb_json = notebooks.currentWidget.content.model.toString();
-
-                //var cells = notebooks.currentWidget.content.model.cells;
-                try {
-                    await codex.predict(notebooks, doc_manager, statusWidget, false, notebooks.currentWidget.content.activeCellIndex);
-
-                } catch (e) {
-                    console.error(e.text);
-                }
-
-                // codex.predict(notebooks.currentWidget.content.model.cells, doc_manager).then(()=>
-                // {
-                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content.model) {return}
-                //
-                //     const cell = notebooks.currentWidget.content.model.contentFactory.createCodeCell({});
-                //     cell.value.text = response;
-                //     notebooks.currentWidget.content.model.cells.push(cell);
-                // });
-                //   // `.then()` is called after the request is complete
-                //   // this is part of the Fetch API for handling JSON-encoded responses
-                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content || !notebooks.currentWidget.model ) {return null}
-                //
-                //     notebooks.currentWidget.content.model.cells.push(cell);
-                //   return cell.value.text = response;
-                // });
-
-                // cell.value.text = response;
-                // notebooks.currentWidget.content.model.cells.push(cell);
-                // this._notebookPanel.content.model.cells.insert(0, cell);
-                console.log(`Executed ${CommandIDs.codex_ac}`);
-                toggled_codex_ac = false;
-                // }
-                // })
-            },
-        });
-            let toggled_codex_ic = false;
-            app.commands.addCommand(CommandIDs.codex_ic, {
-            label: 'Predict a Suffix for Last Cell\t[Cmd 1]',
-            isEnabled: () => true,
-            isVisible: () => true,
-            isToggled: () => toggled_codex_ic,
-            iconClass: 'some-css-icon-class',
-            execute: async () => {
-                console.log(`toggeled ${toggled_codex_ic}`)
-                if(toggled_codex_ic){
-                    console.log('running already');
-                    return;
-                }else {
-                    toggled_codex_ic = true;
-                }
-
-                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
-                    console.log('current widget is null!');
-                    toggled_codex_ic = false;
-                    return;
-                }
-                let len = notebooks.currentWidget.content.model.cells.length;
-                cells_trim(notebooks);
-                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
-                    console.log('cells are empty!');
-                    toggled_codex_ic = false;
-                    return;
-                }
-
-                //cell.value.text = "hellloooooo";
-                //var nb_json = notebooks.currentWidget.content.model.toString();
-
-                //var cells = notebooks.currentWidget.content.model.cells;
-                try {
-                    await codex.predict(notebooks, doc_manager, statusWidget, true);
-
-                } catch (e) {
-                    console.error(e.text);
-                }
-
-                // codex.predict(notebooks.currentWidget.content.model.cells, doc_manager).then(()=>
-                // {
-                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content.model) {return}
-                //
-                //     const cell = notebooks.currentWidget.content.model.contentFactory.createCodeCell({});
-                //     cell.value.text = response;
-                //     notebooks.currentWidget.content.model.cells.push(cell);
-                // });
-                //   // `.then()` is called after the request is complete
-                //   // this is part of the Fetch API for handling JSON-encoded responses
-                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content || !notebooks.currentWidget.model ) {return null}
-                //
-                //     notebooks.currentWidget.content.model.cells.push(cell);
-                //   return cell.value.text = response;
-                // });
-
-                // cell.value.text = response;
-                // notebooks.currentWidget.content.model.cells.push(cell);
-                // this._notebookPanel.content.model.cells.insert(0, cell);
-                console.log(`Executed ${CommandIDs.codex_ic}`);
-                toggled_codex_ic = false;
-                // }
-                // })
-            },
-                        });
-            let toggled_codex_ic_ac = false;
-            app.commands.addCommand(CommandIDs.codex_ic_ac, {
-            label: 'Predict a Suffix for Current Cell\t[Cmd 1a]',
-            isEnabled: () => true,
-            isVisible: () => true,
-            isToggled: () => toggled_codex_ic_ac,
-            iconClass: 'some-css-icon-class',
-            execute: async () => {
-                console.log(`toggeled ${toggled_codex_ic_ac}`)
-                if(toggled_codex_ic_ac){
-                    console.log('running already');
-                    return;
-                }else {
-                    toggled_codex_ic_ac = true;
-                }
-
-                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
-                    console.log('current widget is null!');
-                    toggled_codex_ic_ac = false;
-                    return;
-                }
-                let len = notebooks.currentWidget.content.model.cells.length;
-                cells_trim(notebooks);
-                if (len == 0 || notebooks.currentWidget.content.model.cells.get(len - 1).value.text == '') {
-                    console.log('cells are empty!');
-                    toggled_codex_ic_ac = false;
-                    return;
-                }
-
-                //cell.value.text = "hellloooooo";
-                //var nb_json = notebooks.currentWidget.content.model.toString();
-
-                //var cells = notebooks.currentWidget.content.model.cells;
-                try {
-                    await codex.predict(notebooks, doc_manager, statusWidget, true, notebooks.currentWidget.content.activeCellIndex);
-
-                } catch (e) {
-                    console.error(e.text);
-                }
-
-                // codex.predict(notebooks.currentWidget.content.model.cells, doc_manager).then(()=>
-                // {
-                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content.model) {return}
-                //
-                //     const cell = notebooks.currentWidget.content.model.contentFactory.createCodeCell({});
-                //     cell.value.text = response;
-                //     notebooks.currentWidget.content.model.cells.push(cell);
-                // });
-                //   // `.then()` is called after the request is complete
-                //   // this is part of the Fetch API for handling JSON-encoded responses
-                //     if (!notebooks || !notebooks.currentWidget || ! notebooks.currentWidget.content || !notebooks.currentWidget.model ) {return null}
-                //
-                //     notebooks.currentWidget.content.model.cells.push(cell);
-                //   return cell.value.text = response;
-                // });
-
-                // cell.value.text = response;
-                // notebooks.currentWidget.content.model.cells.push(cell);
-                // this._notebookPanel.content.model.cells.insert(0, cell);
-                console.log(`Executed ${CommandIDs.codex_ic_ac}`);
-                toggled_codex_ic_ac = false;
-                // }
-                // })
-            },
-                        });
-
-            let toggled_codex_output = false;
-            app.commands.addCommand(CommandIDs.codex_output, {
-            label: 'View Prediction Log\t[Cmd o]',
-            isEnabled: () => true,
-            isVisible: () => true,
-            isToggled: () => toggled_codex_output,
-            iconClass: 'some-css-icon-class',
-            execute: async () => {
-                console.log(`toggeled ${toggled_codex_output}`)
-                if (toggled_codex_output) {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
                     console.log('running already');
                     return;
                 } else {
-                    toggled_codex_output = true;
+                    toggle = true;
                 }
 
                 if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
                     console.log('current widget is null!');
-                    toggled_codex_output = false;
+                    toggle = false;
                     return;
                 }
 
                 try {
-                    await codex.show_flow_output(notebooks, statusWidget)
+
+                    await codex_nb.show_conf(notebooks.currentWidget.content.model);
 
                 } catch (e) {
                     console.error(e.text);
                 }
 
-                console.log(`Executed ${CommandIDs.codex_sc}`);
-                toggled_codex_output = false;
-           },
+                console.log(`Executed ${CommandIDs.show_conf}`);
+                toggle = false;
+            }
         });
 
-        //
-        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension(app));
-        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension2(app));
-        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension3(app));
-        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension4(app));
-        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension5(app));
-        // app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension6(app));
+        app.commands.addCommand(CommandIDs.save_conf, {
+            label: 'Save Configurations\t\t[Cmd 9 s]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggle,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
+            execute: async () => {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
+                    console.log('running already');
+                    return;
+                } else {
+                    toggle = true;
+                }
+
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggle = false;
+                    return;
+                }
+
+                try {
+
+                    await codex_nb.save_conf(notebooks.currentWidget.content.model);
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                console.log(`Executed ${CommandIDs.save_conf}`);
+                toggle = false;
+            }
+        });
+
+            app.commands.addCommand(CommandIDs.reset_conf, {
+            label: 'Reset Configurations\t\t[Cmd 9 r]',
+            isEnabled: () => true,
+            isVisible: () => true,
+            isToggled: () => toggle,
+            // iconClass: 'jp-MaterialIcon jp-LinkIcon',
+            execute: async () => {
+                console.log(`toggled ${toggle}`)
+                if (toggle) {
+                    console.log('running already');
+                    return;
+                } else {
+                    toggle = true;
+                }
+
+                if (!notebooks.currentWidget || !notebooks.currentWidget.content.model) {
+                    console.log('current widget is null!');
+                    toggle = false;
+                    return;
+                }
+
+                try {
+
+                    await codex_nb.reset_conf();
+
+                } catch (e) {
+                    console.error(e.text);
+                }
+
+                console.log(`Executed ${CommandIDs.reset_conf}`);
+                toggle = false;
+            }
+        });
     }
 }
 export default plugin;
