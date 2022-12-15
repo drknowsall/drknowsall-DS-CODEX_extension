@@ -84,7 +84,7 @@ export class CodexCachedPredictor {
         try {
             const output = await this.openai.createCompletion(params);
 
-            let result = output.data.choices[0].text.trim();
+            let result = output.data.choices[0].text;
 
             if (result.indexOf('In[') >= 0)
             {

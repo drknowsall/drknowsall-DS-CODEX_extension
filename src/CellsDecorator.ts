@@ -65,17 +65,20 @@ export class CellsDecorator {
         }
   }
 
-  async AddComments(cells : Array<ICellModel>, min_length = 10) : Promise<{out_cells: Array<ICellModel>, ordinals:Array<number>}>
+  async AddComments(cells : Array<ICellModel>) : Promise<{out_cells: Array<ICellModel>, ordinals:Array<number>, comments:Array<string>}>
   {
       let out_cells = Array<ICellModel>();
+      let comments = Array<string>();
       let ordinals = Array<number>();
       for (let l = 0; l < cells.length; l++) {
           let text = cells[l].value.text;
-          if (text.length >= min_length)
+          if (text.trim()[0] != '#')
           {
               let comment = await this.ccp.predict(text, true);
 
-              if (comment !== undefined){
+              if (comment !== undefined)
+              {
+                comments.push(comment)
                 cells[l].value.text = comment + '\n' + text.trim();
                 ordinals.push(l);
               }
@@ -84,7 +87,7 @@ export class CellsDecorator {
           out_cells.push(cells[l]);
       }
 
-      return {out_cells, ordinals};
+      return {out_cells, ordinals, comments};
   }
 
   async AddMarkdowns(model: INotebookModel, cells : Array<ICellModel>) : Promise<{out_cells: Array<ICellModel>, ordinals:Array<number>}>

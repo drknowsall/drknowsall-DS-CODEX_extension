@@ -458,7 +458,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
 
             app.commands.addCommand(CommandIDs.add_markdowns_all, {
-            label: 'Try Add Markdowns\t\t[Cmd 4]',
+            label: 'Add Markdowns to all Cells\t\t[Cmd 4]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggle,
@@ -498,7 +498,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
 
             app.commands.addCommand(CommandIDs.add_markdowns, {
-            label: 'Try Add Markdowns to Active Cell\t\t[Cmd 5]',
+            label: 'Add Markdowns to Active Cell\t\t[Cmd 5]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggle,
@@ -538,7 +538,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
 
             app.commands.addCommand(CommandIDs.pred_log, {
-            label: 'View Prediction Log\t\t[Cmd 6]',
+            label: 'View Prediction text Log\t\t[Cmd 6]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggle,
@@ -572,7 +572,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
 
                app.commands.addCommand(CommandIDs.obj_log, {
-            label: 'View Objects Log\t\t[Cmd 7]',
+            label: 'View Prediction JSON Log\t\t[Cmd 7]',
             isEnabled: () => true,
             isVisible: () => true,
             isToggled: () => toggle,

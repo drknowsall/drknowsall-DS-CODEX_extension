@@ -43,11 +43,11 @@ export class Logger
     return log.slice(0, -1);
   }
 
-  set_object_message(obj:{})
+  set_object_message(prediction_object:{})
   {
     const time = current_time_str();
 
-    this.objects.enqueue({obj, 'time':time});
+    this.objects.enqueue({prediction_object, 'time':time});
   }
 
   get_objects(header:string='I/O Log:\n')
