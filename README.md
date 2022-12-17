@@ -1,4 +1,4 @@
-# CodexNB
+# DS-CODEX
 
 ## A Jupyter extention for auto-completetion and automatic code decorations, internally using OpenAI's codex - https://openai.com/blog/openai-codex/ with improved input selection that is specifically designed for notebooks usage and datascience pipeline. (API key is needed)
 
