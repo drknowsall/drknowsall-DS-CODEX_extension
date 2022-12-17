@@ -11,7 +11,7 @@ export class CellTextConvertor {
 
     }
 
-    Cells2Text(cells :Array<ICellModel>, append_border=true, add_cell_structure=true, extract_selective=false, max_sim_ratio=0.1, set_header=true, return_markdowns_only=false, md_header: string='DS-Codex:', cc_header: string='#DS-CODEX') {
+    Cells2Text(cells :Array<ICellModel>, append_border=true, add_cell_structure=true, extract_selective=false, max_sim_ratio=0.1, return_markdowns_only=false, set_header=true, md_header: string='(DS-CODEX)', cc_header: string='#DS-CODEX') {
 
         let ordinals = Array<number>();
         let max_sim = 0.;
@@ -20,7 +20,7 @@ export class CellTextConvertor {
 
         if (set_header)
             if (cells[cells.length - 1].type =='markdown')
-                c0 = c0.replace(md_header + '<br>', '');
+                c0 = c0.replace(' ' + md_header, '');
             else
                 c0 = c0.replace(cc_header + '\n', '');
 
@@ -45,7 +45,7 @@ export class CellTextConvertor {
             if (cells[i].type =='markdown')
             {
                 if (set_header)
-                    cell_text = cell_text.replace(md_header + '<br>', '');
+                    cell_text = cell_text.replace(' ' + md_header, '');
 
                 if (cell_text.indexOf('<') >=0)
                   {
@@ -57,13 +57,13 @@ export class CellTextConvertor {
             }
             else
             {
+                if (set_header)
+                    cell_text = cell_text.replace(cc_header + '\n', '');
+
                 if (return_markdowns_only)
                 {
                     continue
                 }
-
-                if (set_header)
-                    cell_text = cell_text.replace(cc_header + '\n', '');
             }
 
             let sim = jaccard_similarity(c0, cell_text);
@@ -91,11 +91,12 @@ export class CellTextConvertor {
     {
         text = text.trim();
 
+        if (text.indexOf('>') >= 0 && text.indexOf('<') >= 0  && text.indexOf('font') >= 0)
+            return true;
+
         if (text.indexOf('#') != 0)
             return false;
 
-        if (text.indexOf('>') >= 0 && text.indexOf('<') >= 0  && text.indexOf('font') >= 0)
-            return true;
         // check if the text line first character is not upercase character
 
         for (let i= 1; i < text.length; i++)
@@ -117,13 +118,10 @@ export class CellTextConvertor {
             let md_cell = model.contentFactory.createMarkdownCell({});
 
             text = replaceAll(text, '#', '');
-            if (append_header != '')
-            {
-                text = append_header +'<br>' + text;
-            }
+
             md_cell.value.text =
                 "<font color=\'" + color  + "\'" + " size=\'" + size.toString()  + "px" +
-                "\'" + ">" + replaceAll(text, '#', '') + '</font>';
+                "\'" + ">" + replaceAll(text, '#', '') + '</font>' + ' ' + append_header;
 
             return md_cell;
       }
@@ -142,15 +140,15 @@ export class CellTextConvertor {
         return code_cell;
       }
 
-    Text2Cells(model: INotebookModel, text: string, set_header=true, markdown_color: string='black', markdown_text_size: number=5, append_md_header: string='DS-Codex:', append_cc_header: string='#DS-CODEX') : Array<ICellModel>{
+    Text2Cells(model: INotebookModel, text: string, markdown_color: string='black', markdown_text_size: number=5, set_header=true, md_header: string='(DS-CODEX)', cc_header: string='#DS-CODEX') : Array<ICellModel>{
 
         let cells = Array<ICellModel>();
 
         text = text.trim()
         if (!set_header)
         {
-            append_md_header = '';
-            append_cc_header = '';
+            md_header = '';
+            cc_header = '';
         }
 
         let lines = text.split('\n');
@@ -165,11 +163,11 @@ export class CellTextConvertor {
             {
                 if (cur_code_lines.length > 0)
                 {
-                    cells.push(this.CreateCodeCell(model, cur_code_lines.join('\n'), append_cc_header));
+                    cells.push(this.CreateCodeCell(model, cur_code_lines.join('\n')));
                     cur_code_lines = [];
                 }
 
-                cells.push(this.CreateMarkdownCell(model, lines[i].trim(), markdown_color, markdown_text_size, append_md_header));
+                cells.push(this.CreateMarkdownCell(model, lines[i].trim(), markdown_color, markdown_text_size, md_header));
             }
             else
             {
@@ -179,7 +177,7 @@ export class CellTextConvertor {
 
         if (cur_code_lines.length > 0)
         {
-            cells.push(this.CreateCodeCell(model, cur_code_lines.join('\n'), append_cc_header));
+            cells.push(this.CreateCodeCell(model, cur_code_lines.join('\n'), cc_header));
         }
 
         return cells;

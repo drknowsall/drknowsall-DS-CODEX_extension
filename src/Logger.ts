@@ -2,12 +2,13 @@ import {Queue, current_time_str} from "./common";
 
 export class Logger
 {
-  private usage : Queue<string>
-  private objects : Queue<{}>
+  private readonly usage : Queue<string>
+  private objects : [{}]
 
   constructor() {
     this.usage = new Queue<string>();
-    this.objects = new Queue<{}>();
+    this.objects = [{}]
+    this.objects.pop();
   }
 
   set_usage_message(text:string, append_time=true, append_tab=false)
@@ -43,29 +44,21 @@ export class Logger
     return log.slice(0, -1);
   }
 
-  set_object_message(prediction_object:{})
+  set_object_message(obj:any)
   {
     const time = current_time_str();
-
-    this.objects.enqueue({prediction_object, 'time':time});
+    this.objects.push({...obj, ...{'time':time}});
   }
 
-  get_objects(header:string='I/O Log:\n')
+  get_objects()
   {
-    let objects = this.objects;
-    let log = header;
-
-    while (this.objects.size() > 0)
-    {
-      log += JSON.stringify(objects.dequeue(),null, "\t").trim() + ',\n';
-    }
-
-    return log.slice(0, -1);
+    return 'Prediction Objects:\n\n\n' + JSON.stringify(this.objects,null, "\t").trim();
   }
 
   clear_all()
   {
     this.usage.clear();
-    this.objects.clear();
+    this.objects = [{}];
+    this.objects.pop();
   }
 }

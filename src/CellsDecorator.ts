@@ -65,11 +65,11 @@ export class CellsDecorator {
         }
   }
 
-  async AddComments(cells : Array<ICellModel>) : Promise<{out_cells: Array<ICellModel>, ordinals:Array<number>, comments:Array<string>}>
+  async AddComments(cells : Array<ICellModel>) : Promise<{out_cells: Array<ICellModel>, meta: Array<{content:string, ord:number}>}>
   {
       let out_cells = Array<ICellModel>();
-      let comments = Array<string>();
-      let ordinals = Array<number>();
+      let meta = Array<{content:string, ord:number}>();
+
       for (let l = 0; l < cells.length; l++) {
           let text = cells[l].value.text;
           if (text.trim()[0] != '#')
@@ -78,49 +78,53 @@ export class CellsDecorator {
 
               if (comment !== undefined)
               {
-                comments.push(comment)
                 cells[l].value.text = comment + '\n' + text.trim();
-                ordinals.push(l);
+                meta.push({content:comment, ord:l})
               }
           }
 
           out_cells.push(cells[l]);
       }
 
-      return {out_cells, ordinals, comments};
+      return {out_cells, meta};
   }
 
-  async AddMarkdowns(model: INotebookModel, cells : Array<ICellModel>) : Promise<{out_cells: Array<ICellModel>, ordinals:Array<number>}>
+  async AddMarkdowns(model: INotebookModel, cells : Array<ICellModel>) : Promise<{out_cells: Array<ICellModel>, meta: Array<{content:string, ord:number, keyword:string}>}>
   {
         let out_cells = Array<ICellModel>();
-        let ordinals = Array<number>();
+        let meta = Array<{content:string, ord:number, keyword:string}>();
+
         for (let l = 0; l < cells.length; l++)
         {
             let text = cells[l].value.text;
 
-            this.markdown_keyword.forEach((keywords: string[], markdown: string) => {
+            this.markdown_keyword.forEach((kw: string[], md: string) => {
 
-                let found = false;
-                keywords.forEach((keyword) =>
+                let keyword = '';
+
+                for (let i = 0; i < kw.length; i++)
                 {
-                    if (text.indexOf(keyword) >= 0)
-                        found = true;
-                })
+                    if (text.indexOf(kw[i]) >= 0)
+                    {
+                        keyword = kw[i];
+                        break;
+                    }
+                }
 
                 let markdown_exist = false;
 
                 for (let l0 = 0; l0 < l; l0++)
                 {
-                    if (cells[l0].value.text.indexOf(markdown) >= 0)
+                    if (cells[l0].value.text.indexOf(md) >= 0)
                     {
                         markdown_exist = true;
                     }
                 }
 
-                if (found && !markdown_exist)
+                if (keyword != '' && !markdown_exist)
                 {
-                    out_cells.push(this.ctc.CreateMarkdownCell(model, markdown));
-                    ordinals.push(l);
+                    out_cells.push(this.ctc.CreateMarkdownCell(model, md));
+                    meta.push({content:md, ord:l, keyword:keyword})
                 }
             });
 
@@ -143,7 +147,7 @@ export class CellsDecorator {
                     if (!meta_data_exist)
                     {
                         out_cells.push(this.ctc.CreateMarkdownCell(model, meta_data));
-                        ordinals.push(l);
+                        meta.push({content:meta_data, ord:l, keyword:'read_csv'})
                     }
                 }
             }
@@ -151,6 +155,6 @@ export class CellsDecorator {
             out_cells.push(cells[l]);
         }
 
-        return {out_cells, ordinals}
+        return {out_cells, meta}
   }
 }

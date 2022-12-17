@@ -58,7 +58,7 @@ export class CodexNB
         }
   }
 
-  copy_cells_from_model(model: INotebookModel, from:number=0, top: number=-1) : Array<ICellModel>
+  copy_cells_from_model(model: INotebookModel, from:number=0, top: number=-1, skip_codex_annotation:boolean=true) : Array<ICellModel>
   {
     let cells = Array<ICellModel>();
 
@@ -71,6 +71,9 @@ export class CodexNB
       let model_cell = model.cells.get(i);
       if (model_cell.type == 'markdown')
       {
+        if (skip_codex_annotation && model_cell.value.text.indexOf('DS-CODEX')>=0)
+          continue
+
         cells.push(this.cell_txt_cvt.CreateMarkdownCell(model, model_cell.value.text))
       }
       else
@@ -104,51 +107,42 @@ export class CodexNB
 
     if (this.params['extract_selective'])
     {
-      cells = this.copy_cells_from_model(model, 0, top);
+      cells = this.copy_cells_from_model(model, 0, top, this.params['add_codex_annotation']);
     }
     else
-      cells = this.copy_cells_from_model(model, Math.max(top-this.params['window_size']+1, 0), top);
+      cells = this.copy_cells_from_model(model, Math.max(top-this.params['window_size']+1, 0), top, this.params['add_codex_annotation']);
+
+    let res_raw = this.cell_txt_cvt.Cells2Text(cells, !in_cell, false, this.params['extract_selective'], this.params['max_sim_ratio'], false).cells_text;
 
     model.cells.insert(top+1,this.cell_txt_cvt.CreateMarkdownCell(model, 'Please wait..', 'green'));
 
-    let ord_comments;
-    let ord_markdowns;
-    let res_comments;
-    let res_raw = this.cell_txt_cvt.Cells2Text(cells, !in_cell, false, this.params['extract_selective'], this.params['max_sim_ratio'], false).cells_text;
+    let comments_meta = [{content:'', ord:1}];
+    let markdowns_meta = [{content:'', ord:1, keyword:''}];
+    markdowns_meta.pop();
+    comments_meta.pop();
 
     if (this.params['add_comments_before_prediction'])
     {
       let res = await this.cell_dec.AddComments(cells);
-      ord_comments = res.ordinals;
       cells = res.out_cells;
-      res_comments = res.comments
-      this.logger.set_usage_message('DS-CODEX: Add Comments to Cells: ' + ord_comments.toString(),false, true);
+      comments_meta = res.meta;
+      this.logger.set_usage_message('DS-CODEX: Comments add',false, true);
     }
-    let res_md = '';
+
     if (this.params['add_markdowns_before_prediction'])
     {
       let res = await this.cell_dec.AddMarkdowns(model, cells);
-      ord_markdowns = res.ordinals;
+      markdowns_meta = res.meta;
       cells = res.out_cells;
-      res_md = this.cell_txt_cvt.Cells2Text(cells, !in_cell, this.params['add_cell_structure'], this.params['extract_selective'], this.params['max_sim_ratio'], false, true).cells_text;
-
-      this.logger.set_usage_message('DS-CODEX: Add Markdowns to Cells: ' + ord_markdowns.toString(),false, true);
+      this.logger.set_usage_message('DS-CODEX: Markdowns add',false, true);
     }
-    let res = this.cell_txt_cvt.Cells2Text(cells,  !in_cell, this.params['add_cell_structure'], this.params['extract_selective'], this.params['max_sim_ratio'], this.params['add_codex_annotation']);
+    let res = this.cell_txt_cvt.Cells2Text(cells,  !in_cell, this.params['add_cell_structure'], this.params['extract_selective'], this.params['max_sim_ratio']);
     let ord_input = res.ordinals;
     let codex_input = res.cells_text;
     this.logger.set_usage_message('DS-CODEX: Extracted Cells for Codex Input: ' + ord_input.toString(),false, true);
-
     this.logger.set_usage_message('DS-CODEX: #Input tokens: ' + codex_input.length.toString(),false, true);
 
     let codex_output = await this.predictor.predict(codex_input);
-
-    this.logger.set_object_message({
-      RAW_input:res_raw,
-      inferred_markdowns:res_md,
-      inferred_comments:res_comments,
-      DS_CODEX_input:codex_input,
-      DS_CODEX_output:codex_output});
 
     model.cells.remove(top+1);
 
@@ -175,25 +169,62 @@ export class CodexNB
         else
         {
           codex_output = codex_output.trim()
-          let new_cells = this.cell_txt_cvt.Text2Cells(model, codex_output, this.params['add_codex_annotation']);
+          let new_cells = this.cell_txt_cvt.Text2Cells(model, codex_output);
           this.logger.set_usage_message('DS-CODEX: #Output tokens: ' + codex_output.length.toString(),false, true);
           this.logger.set_usage_message(new_cells.length.toString() + ' Cells Extracted From Output',false, true);
 
-
           this.add_cells_to_model(model, new_cells, top+1);
+          // if (this.params['add_codex_annotation'])
+          //   model.cells.insert(top+1, this.cell_txt_cvt.CreateMarkdownCell(model, 'DS-CODEX', 'green', 3));
+
         }
       }
       else
       {
         this.logger.set_usage_message('DS-CODEX: Returned Empty Response',false, true);
-        model.cells.insert(top+1, this.cell_txt_cvt.CreateMarkdownCell(model, 'DS-CODEX: empty response', 'orange'));
+        model.cells.insert(top+1, this.cell_txt_cvt.CreateMarkdownCell(model, 'DS-CODEX: empty response', 'orange', 3));
       }
     }
     else
     {
       this.logger.set_usage_message('DS-CODEX: Returned Error',false, true);
-      model.cells.insert(top+1, this.cell_txt_cvt.CreateMarkdownCell(model, 'DS-CODEX Error: undefined response', 'red'));
+      model.cells.insert(top+1, this.cell_txt_cvt.CreateMarkdownCell(model, 'DS-CODEX Error: undefined response', 'red', 3));
     }
+
+    let pred_info = {
+      raw_input:res_raw,
+      add_info: [{}],
+      final_input: codex_input,
+      DS_CODEX_output:codex_output
+    }
+    pred_info.add_info.pop();
+
+    for (let i = 0; i < comments_meta.length; i++)
+    {
+      let ele_info = {
+        content: comments_meta[i].content,
+        type : 'comment',
+        cell: comments_meta[i].ord,
+      };
+        pred_info.add_info.push(ele_info)
+    }
+
+    for (let i = 0; i < markdowns_meta.length; i++)
+    {
+      let ele_info = {
+        content: markdowns_meta[i].content,
+        type : 'markdown',
+        cell: markdowns_meta[i].ord,
+        keyword: markdowns_meta[i].keyword
+      };
+
+        pred_info.add_info.push(ele_info)
+    }
+
+    if (this.params['add_cell_structure'])
+      pred_info.add_info.push({type : 'structure'})
+
+    this.logger.set_object_message(pred_info);
   }
 
   async predict_new_cell(model: INotebookModel, active_cell_index:number)
@@ -217,14 +248,14 @@ export class CodexNB
     model.cells.remove(active_cell_index+1);
 
     cells = res.out_cells;
-    if (res.comments.length > 0)
+    if (res.meta.length > 0)
     {
       model.cells.set(active_cell_index, cells[0]);
     }
     else
     {
         this.logger.set_usage_message('DS-CODEX: Could not find the right comment',false, true);
-        model.cells.insert(active_cell_index+1, this.cell_txt_cvt.CreateMarkdownCell(model, 'DS-CODEX: Could not find the right comment', 'orange'));
+        model.cells.insert(active_cell_index+1, this.cell_txt_cvt.CreateMarkdownCell(model, 'DS-CODEX: Could not find the right comment', 'orange', 3));
     }
   }
 
@@ -258,6 +289,11 @@ export class CodexNB
       {
         model.cells.insert(active_cell_index - i, res.out_cells[i]);
       }
+    }
+    else
+    {
+        this.logger.set_usage_message('DS-CODEX: Could not find the right markdown',false, true);
+        model.cells.insert(active_cell_index+1, this.cell_txt_cvt.CreateMarkdownCell(model, 'DS-CODEX: Could not find the right markdown', 'orange', 3));
     }
   }
 

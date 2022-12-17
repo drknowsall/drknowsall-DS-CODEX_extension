@@ -325,7 +325,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 try {
-
+                    notebooks.currentWidget.content.model.cells.clearUndo()
                     await codex_nb.predict_new_cell(notebooks.currentWidget.content.model, notebooks.currentWidget.content.activeCellIndex);
 
                 } catch (e) {
@@ -365,7 +365,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 try {
-
+                    notebooks.currentWidget.content.model.cells.clearUndo()
                     await codex_nb.predict_in_cell(notebooks.currentWidget.content.model, notebooks.currentWidget.content.activeCellIndex);
 
                 } catch (e) {
@@ -405,7 +405,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 try {
-
+                    notebooks.currentWidget.content.model.cells.clearUndo()
                     await codex_nb.add_comments_to_all_cells(notebooks.currentWidget.content.model);
 
                 } catch (e) {
@@ -445,7 +445,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 try {
-
+                    notebooks.currentWidget.content.model.cells.clearUndo()
                     await codex_nb.add_comment_to_active_cell(notebooks.currentWidget.content.model, notebooks.currentWidget.content.activeCellIndex);
 
                 } catch (e) {
@@ -485,7 +485,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 try {
-
+                    notebooks.currentWidget.content.model.cells.clearUndo()
                     await codex_nb.add_markdowns_to_all_cells(notebooks.currentWidget.content.model);
 
                 } catch (e) {
@@ -525,7 +525,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 try {
-
+                    notebooks.currentWidget.content.model.cells.clearUndo()
                     await codex_nb.add_markdown_to_active_cell(notebooks.currentWidget.content.model, notebooks.currentWidget.content.activeCellIndex);
 
                 } catch (e) {
@@ -559,7 +559,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
                 }
 
                 try {
-
+                    notebooks.currentWidget.content.model.cells.clearUndo()
                     await codex_nb.show_prediction_log(notebooks.currentWidget.content.model);
 
                 } catch (e) {
